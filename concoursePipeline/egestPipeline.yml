@@ -1,0 +1,90 @@
+resource_types:
+  - name: pull-request
+    type: docker-image
+    source:
+      repository: teliaoss/github-pr-resource
+
+  - name: base-go-image
+    type: docker-image
+    source:
+      repository: golang
+      tag: 1.13.4-stretch
+
+  - name: ecr-image-egest
+    type: docker-image
+    source:
+      repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
+      tag: egest
+      aws_access_key_id: ((aws.aws_access_key))
+      aws_secret_access_key: ((aws.aws_secret_access_key))
+
+  - name: egest-repository
+    type: pull-request
+    check_every: 24h
+    # webhook_token: ((webhook_token-concourse))
+    source:
+      repository: ONSdigital/takeon-egestion
+      access_token: ((git_access_token))
+
+  - name: egest-deploy-repository
+    type: git
+    check_every: 24h
+    # webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/takeon-egestion.git
+      branch: dev
+
+  - name: installing-dependencies-egest
+    serial_groups: [rebuild-egest]
+    plan:
+      - in_parallel:
+      - get: egest-repository
+
+      - get: base-go-image
+        params:
+        save: true
+
+      - put: ecr-image-egest
+        params:
+          load_base: base-go-image
+          build: egest-repository
+          save: true
+          cache: true
+          cache_tag: egest
+        get_params:
+          skip_download: true
+
+
+  - name: egest-deploy
+    plan:
+      - get: egest-deploy-repository
+        trigger: true
+      - task: serverless-aws
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
+              tag: egest
+              aws_access_key_id: ((aws.aws_access_key))
+              aws_secret_access_key: ((aws.aws_secret_access_key))
+          params:
+            AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
+            AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))
+            SLS_DEBUG: 1
+          inputs:
+            - name: egest-deploy-repository
+              path: /go/src/github.com/takeon-egestion
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                SRCPATH=$PWD/go/src/github.com/takeon-egestion
+                GOPATH=$PWD/go
+                cd $SRCPATH
+                go get -t -v ./...
+                env GOOS=linux go build  -o bin/main
+                serverless package --package pkg
+                serverless deploy --verbose;
