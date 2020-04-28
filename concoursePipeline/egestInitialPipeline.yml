@@ -1,38 +1,25 @@
-resource_types:
-- name: terraform
-  type: docker-image
-  source:
-    repository: ljfranklin/terraform-resource
-    tag: latest
-
-- name: base-go-image
-  type: docker-image
-  source:
-    repository: golang
-    tag: 1.13.4-stretch
-
 resources:
   - name: base-go-image
     type: docker-image
     source:
       repository: golang
-      tag: 1.13.4-stretch 
-  - name: ecr-image-egest
-    type: docker-image
-    source:
-      repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
-      tag: egest
-      aws_access_key_id: ((aws.aws_access_key))
-      aws_secret_access_key: ((aws.aws_secret_access_key))
-  
+      tag: 1.13.4-stretch
+
   - name: egest-repository
     type: git
     source:
       uri: https://github.com/ONSdigital/takeon-egestion.git
       branch: dev
 
-jobs:
+  - name: ecr-image-egest
+    type: docker-image
+    source:
+      repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
+      tag: latest
+      aws_access_key_id: ((aws.aws_access_key))
+      aws_secret_access_key: ((aws.aws_secret_access_key))
 
+jobs:
   - name: installing-dependencies-egest
     plan:
       - in_parallel:

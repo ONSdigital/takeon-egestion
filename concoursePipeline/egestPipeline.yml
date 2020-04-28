@@ -18,18 +18,17 @@ resource_types:
       aws_access_key_id: ((aws.aws_access_key))
       aws_secret_access_key: ((aws.aws_secret_access_key))
 
-  - name: egest-repository
+  - name: pull-egest-repository
     type: pull-request
-    check_every: 24h
-    # webhook_token: ((webhook_token-concourse))
+    check_every: 2m
+    webhook_token: ((webhook_token-concourse))
     source:
       repository: ONSdigital/takeon-egestion
-      access_token: ((git_access_token))
+      access_token: ((github.git_access_token))
 
   - name: egest-deploy-repository
     type: git
     check_every: 24h
-    # webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/takeon-egestion.git
       branch: dev
@@ -54,7 +53,7 @@ resource_types:
         get_params:
           skip_download: true
 
-
+jobs:
   - name: egest-deploy
     plan:
       - get: egest-deploy-repository
