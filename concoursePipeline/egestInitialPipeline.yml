@@ -15,7 +15,7 @@ resources:
     type: docker-image
     source:
       repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
-      tag: latest
+      tag: egestion
       aws_access_key_id: ((aws.aws_access_key))
       aws_secret_access_key: ((aws.aws_secret_access_key))
 

@@ -3,7 +3,7 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
-
+resources:
   - name: base-go-image
     type: docker-image
     source:
@@ -14,17 +14,17 @@ resource_types:
     type: docker-image
     source:
       repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
-      tag: egest
+      tag: egestion
       aws_access_key_id: ((aws.aws_access_key))
       aws_secret_access_key: ((aws.aws_secret_access_key))
 
-  - name: pull-egest-repository
+  - name: egest-repository
     type: pull-request
     check_every: 2m
-    webhook_token: ((webhook_token-concourse))
+    # webhook_token: ((webhook_token-concourse))
     source:
       repository: ONSdigital/takeon-egestion
-      access_token: ((github.git_access_token))
+      access_token: ((aws.git_access_token))
 
   - name: egest-deploy-repository
     type: git
@@ -33,15 +33,16 @@ resource_types:
       uri: https://github.com/ONSdigital/takeon-egestion.git
       branch: dev
 
+jobs:
   - name: installing-dependencies-egest
     serial_groups: [rebuild-egest]
     plan:
-      - in_parallel:
-      - get: egest-repository
+      - in_parallel: 
+        - get: egest-repository
 
-      - get: base-go-image
-        params:
-        save: true
+        - get: base-go-image
+          params:
+            save: true
 
       - put: ecr-image-egest
         params:
@@ -53,7 +54,6 @@ resource_types:
         get_params:
           skip_download: true
 
-jobs:
   - name: egest-deploy
     plan:
       - get: egest-deploy-repository
@@ -65,7 +65,7 @@ jobs:
             type: docker-image
             source:
               repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
-              tag: egest
+              tag: egestion
               aws_access_key_id: ((aws.aws_access_key))
               aws_secret_access_key: ((aws.aws_secret_access_key))
           params:
