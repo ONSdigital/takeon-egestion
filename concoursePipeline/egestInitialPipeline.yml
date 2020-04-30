@@ -1,15 +1,23 @@
 resources:
-  - name: base-go-image
-    type: docker-image
-    source:
-      repository: golang
-      tag: 1.13.4-stretch
+  # - name: base-go-image
+  #   type: docker-image
+  #   source:
+  #     repository: golang
+  #     tag: 1.13.4-stretch
+
+  # - name: egest-repository-main
+  #   type: git
+  #   source:
+  #     uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+  #     branch: feature/LU-5452-egestPipeline
 
   - name: egest-repository
     type: git
     source:
-      uri: https://github.com/ONSdigital/takeon-egestion.git
-      branch: dev
+      uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+      branch: feature/LU-5452-egestPipeline
+      paths: 
+        - takeon-dbexport/
 
   - name: ecr-image-egest
     type: docker-image
@@ -22,15 +30,22 @@ resources:
 jobs:
   - name: installing-dependencies-egest
     plan:
-      - in_parallel:
-        - get: egest-repository
-          trigger: true
-
-        - get: base-go-image
-          params:
-            save: true
-
+      - get: egest-repository
+        trigger: true
       - put: ecr-image-egest
         params:
-          load_base: base-go-image
-          build: egest-repository
+          build: egest-repository/takeon-dbexport
+          tag_as_latest: false
+      # - in_parallel:
+      #   - get: egest-repository-main
+      #   # - get: egest-repository
+      #     trigger: true
+
+      #   - get: base-go-image
+      #     params:
+      #       save: true
+
+      # - put: ecr-image-egest
+      #   params:
+      #     load_base: base-go-image
+      #     build: egest-repository
