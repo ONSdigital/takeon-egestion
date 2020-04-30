@@ -23,15 +23,19 @@ resources:
     check_every: 2m
     # webhook_token: ((webhook_token-concourse))
     source:
-      repository: ONSdigital/takeon-egestion
+      repository: ONSdigital/takeon-egest-pipeline
       access_token: ((aws.git_access_token))
+      paths: 
+        - takeon-dbexport/ 
 
   - name: egest-deploy-repository
     type: git
     check_every: 24h
     source:
-      uri: https://github.com/ONSdigital/takeon-egestion.git
-      branch: dev
+      uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+      paths: 
+        - takeon-dbexport/
+      branch: feature/LU-5452-egestPipeline
 
 jobs:
   - name: installing-dependencies-egest
@@ -50,7 +54,7 @@ jobs:
           build: egest-repository
           save: true
           cache: true
-          cache_tag: egest
+          cache_tag: egestion
         get_params:
           skip_download: true
 
@@ -74,13 +78,13 @@ jobs:
             SLS_DEBUG: 1
           inputs:
             - name: egest-deploy-repository
-              path: /go/src/github.com/takeon-egestion
+              path: /go/src/github.com/takeon-egest-pipeline
           run:
             path: sh
             args:
               - -c
               - |
-                SRCPATH=$PWD/go/src/github.com/takeon-egestion
+                SRCPATH=$PWD/go/src/github.com/takeon-egest-pipeline/takeon-dbexport
                 GOPATH=$PWD/go
                 cd $SRCPATH
                 go get -t -v ./...
