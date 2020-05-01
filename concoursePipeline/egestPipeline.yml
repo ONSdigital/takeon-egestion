@@ -3,12 +3,20 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
   - name: terraform
     type: docker-image
     source:
       repository: ljfranklin/terraform-resource
       tag: latest
+<<<<<<< HEAD
       
+=======
+  
+>>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
 resources:
   - name: base-go-image
     type: docker-image
@@ -67,6 +75,25 @@ resources:
           AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
           AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key)) 
 
+  - name: egest-terraform-state
+    type: terraform
+    source:
+      backend_type: s3
+      backend_config:
+        bucket: takeon-terraform-state
+        key: {{egest_state_file}}
+        region: {{aws_region}}
+        access_key: ((aws.aws_access_key))
+        secret_key: ((aws.aws_secret_access_key))
+        dynamodb_table: takeon-terraform-state
+      vars:
+        environment_name: {{environment_name}}
+        environment_name_vpc: {{environment_name_vpc}}
+        user: {{user}}
+      env:
+        AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
+        AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))  
+
 jobs:
   - name: installing-dependencies-egest
     serial_groups: [rebuild-egest]
@@ -89,6 +116,7 @@ jobs:
 
   - name: terraform-egest-apply
     plan:
+<<<<<<< HEAD
       - get: takeon-egest-pipeline-git-repo
         trigger: true
       - put: egest-terraform-state
@@ -100,6 +128,19 @@ jobs:
             environment_name: {{environment_name}}
             environment_name_vpc: {{environment_name_vpc}}
             user: {{user}}    
+=======
+     - get: egest-repository
+       trigger: true
+     - put: egest-terraform-state
+       params:
+        terraform_source: takeon-egest-pipeline/aws-infrastructure/
+        action: apply
+        env_name: {{environment_name}}
+        vars:
+          environment_name: {{environment_name}}
+          environment_name_vpc: {{environment_name_vpc}}
+          user: {{user}}    
+>>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
 
   - name: egest-deploy
     plan:
