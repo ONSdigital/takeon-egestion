@@ -3,6 +3,12 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
+  - name: terraform
+    type: docker-image
+    source:
+      repository: ljfranklin/terraform-resource
+      tag: latest
+      
 resources:
   - name: base-go-image
     type: docker-image
@@ -21,7 +27,6 @@ resources:
   - name: egest-repository
     type: pull-request
     check_every: 2m
-    # webhook_token: ((webhook_token-concourse))
     source:
       repository: ONSdigital/takeon-egest-pipeline
       access_token: ((aws.git_access_token))
@@ -33,7 +38,34 @@ resources:
       uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
       paths: 
         - takeon-dbexport/
-      branch: feature/LU-5452-egestPipeline
+      branch: dev
+  
+  - name: takeon-egest-pipeline-git-repo
+    type: git
+    source:
+      uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+      paths:
+        - aws-infrastructure/
+      branch: dev
+
+  - name: egest-terraform-state
+    type: terraform
+    source:
+      backend_type: s3
+      backend_config:
+        bucket: takeon-terraform-state
+        key: {{egest_state_file}}
+        region: {{aws_region}}
+        access_key: ((aws.aws_access_key))
+        secret_key: ((aws.aws_secret_access_key))
+        dynamodb_table: takeon-terraform-state
+        vars:
+          environment_name: {{environment_name}}
+          environment_name_vpc: {{environment_name_vpc}}
+          user: {{user}}
+        env:
+          AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
+          AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key)) 
 
 jobs:
   - name: installing-dependencies-egest
@@ -41,7 +73,6 @@ jobs:
     plan:
       - in_parallel: 
         - get: egest-repository
-
         - get: base-go-image
           params:
             save: true
@@ -55,6 +86,20 @@ jobs:
           cache_tag: egestion
         get_params:
           skip_download: true
+
+  - name: terraform-egest-apply
+    plan:
+      - get: takeon-egest-pipeline-git-repo
+        trigger: true
+      - put: egest-terraform-state
+        params:
+          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
+          action: apply
+          env_name: {{environment_name}}
+          vars:
+            environment_name: {{environment_name}}
+            environment_name_vpc: {{environment_name_vpc}}
+            user: {{user}}    
 
   - name: egest-deploy
     plan:
