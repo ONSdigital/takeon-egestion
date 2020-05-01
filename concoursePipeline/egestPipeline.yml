@@ -3,6 +3,13 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
+
+  - name: terraform
+    type: docker-image
+    source:
+      repository: ljfranklin/terraform-resource
+      tag: latest
+  
 resources:
   - name: base-go-image
     type: docker-image
@@ -35,6 +42,25 @@ resources:
         - takeon-dbexport/
       branch: feature/LU-5452-egestPipeline
 
+  - name: egest-terraform-state
+    type: terraform
+    source:
+      backend_type: s3
+      backend_config:
+        bucket: takeon-terraform-state
+        key: {{egest_state_file}}
+        region: {{aws_region}}
+        access_key: ((aws.aws_access_key))
+        secret_key: ((aws.aws_secret_access_key))
+        dynamodb_table: takeon-terraform-state
+      vars:
+        environment_name: {{environment_name}}
+        environment_name_vpc: {{environment_name_vpc}}
+        user: {{user}}
+      env:
+        AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
+        AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))  
+
 jobs:
   - name: installing-dependencies-egest
     serial_groups: [rebuild-egest]
@@ -55,6 +81,20 @@ jobs:
           cache_tag: egestion
         get_params:
           skip_download: true
+
+  - name: terraform-egest-apply
+    plan:
+     - get: egest-repository
+       trigger: true
+     - put: egest-terraform-state
+       params:
+        terraform_source: takeon-egest-pipeline/aws-infrastructure/
+        action: apply
+        env_name: {{environment_name}}
+        vars:
+          environment_name: {{environment_name}}
+          environment_name_vpc: {{environment_name_vpc}}
+          user: {{user}}    
 
   - name: egest-deploy
     plan:

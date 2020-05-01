@@ -1,1 +1,6 @@
 aws_region: eu-west-2
+egest_state_file: takeon-egestion/dev/matt/terraform.tfstate
+environment_name: takeon-dev-sandbox
+environment_name_vpc: takeon-dev-sandbox-vpc
+user: matt
+stage: dev 
