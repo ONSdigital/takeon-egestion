@@ -1,11 +1,11 @@
 # Defining s3 bucket for export
 
 resource "aws_s3_bucket" "export" {
-  bucket = "${var.environment_name}-export-bucket"
+  bucket = "${var.environment_name}-${var.user}-export-bucket"
   acl    = "private"
 
   tags = {
-    Name = "${var.environment_name}-Export-Bucket"
+    Name = "${var.environment_name}-${var.user}-Export-Bucket"
     App  = "takeon"
   }
 }
@@ -15,7 +15,7 @@ resource "aws_s3_bucket" "export" {
 # Separate Lambda role for egestion
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name = "${var.environment_name}-egestion-lambda-role"
+  name = "${var.environment_name}-${var.user}-egestion-lambda-role"
 
   assume_role_policy = <<EOF
 {

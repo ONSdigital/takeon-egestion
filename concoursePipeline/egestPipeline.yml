@@ -103,7 +103,9 @@ jobs:
           vars:
             environment_name: {{environment_name}}
             environment_name_vpc: {{environment_name_vpc}}
-            user: {{user}}    
+            user: {{user}}
+            aws_access_key: ((aws.aws_access_key))
+            aws_secret_access_key: ((aws.aws_secret_access_key))    
 
   - name: egest-deploy
     plan:
