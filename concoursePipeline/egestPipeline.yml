@@ -46,7 +46,7 @@ resources:
       uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
       paths:
         - aws-infrastructure/
-      branch: dev
+      branch: feature/LU-5452-egestPipeline
 
   - name: egest-terraform-state
     type: terraform
