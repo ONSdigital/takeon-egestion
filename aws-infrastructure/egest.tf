@@ -1,5 +1,3 @@
-
-
 # Defining s3 bucket for export
 
 resource "aws_s3_bucket" "export" {
