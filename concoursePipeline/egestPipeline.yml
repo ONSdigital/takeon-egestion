@@ -65,26 +65,7 @@ resources:
           user: {{user}}
         env:
           AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
-          AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key)) 
-
-  - name: egest-terraform-state
-    type: terraform
-    source:
-      backend_type: s3
-      backend_config:
-        bucket: takeon-terraform-state
-        key: {{egest_state_file}}
-        region: {{aws_region}}
-        access_key: ((aws.aws_access_key))
-        secret_key: ((aws.aws_secret_access_key))
-        dynamodb_table: takeon-terraform-state
-      vars:
-        environment_name: {{environment_name}}
-        environment_name_vpc: {{environment_name_vpc}}
-        user: {{user}}
-      env:
-        AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
-        AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))  
+          AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))   
 
 jobs:
   - name: installing-dependencies-egest

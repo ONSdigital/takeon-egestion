@@ -1,8 +1,4 @@
-# Setting the provider
 
-provider "aws" {
-  region = "eu-west-2"
-}
 
 # Defining s3 bucket for export
 
