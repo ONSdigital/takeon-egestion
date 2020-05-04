@@ -3,7 +3,7 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
-      
+
   - name: terraform
     type: docker-image
     source:
@@ -53,6 +53,7 @@ resources:
     type: terraform
     source:
       backend_type: s3
+      env_name: {{environment_name}}
       backend_config:
         bucket: takeon-terraform-state
         key: {{egest_state_file}}
@@ -64,6 +65,8 @@ resources:
           environment_name: {{environment_name}}
           environment_name_vpc: {{environment_name_vpc}}
           user: {{user}}
+          aws_access_key: ((aws.aws_access_key))
+          aws_secret_access_key: ((aws.aws_secret_access_key))
         env:
           AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
           AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))   
