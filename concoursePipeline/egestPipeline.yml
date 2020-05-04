@@ -3,20 +3,12 @@ resource_types:
     type: docker-image
     source:
       repository: teliaoss/github-pr-resource
-<<<<<<< HEAD
-=======
-
->>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
   - name: terraform
     type: docker-image
     source:
       repository: ljfranklin/terraform-resource
       tag: latest
-<<<<<<< HEAD
-      
-=======
-  
->>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
+
 resources:
   - name: base-go-image
     type: docker-image
@@ -116,7 +108,6 @@ jobs:
 
   - name: terraform-egest-apply
     plan:
-<<<<<<< HEAD
       - get: takeon-egest-pipeline-git-repo
         trigger: true
       - put: egest-terraform-state
@@ -128,19 +119,6 @@ jobs:
             environment_name: {{environment_name}}
             environment_name_vpc: {{environment_name_vpc}}
             user: {{user}}    
-=======
-     - get: egest-repository
-       trigger: true
-     - put: egest-terraform-state
-       params:
-        terraform_source: takeon-egest-pipeline/aws-infrastructure/
-        action: apply
-        env_name: {{environment_name}}
-        vars:
-          environment_name: {{environment_name}}
-          environment_name_vpc: {{environment_name_vpc}}
-          user: {{user}}    
->>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
 
   - name: egest-deploy
     plan:

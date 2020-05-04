@@ -1,13 +1,5 @@
 aws_region: eu-west-2
-<<<<<<< HEAD
 egest_state_file: takeon-egestion/dev/larissa/terraform.tfstate
 environment_name: takeon-dev-sandbox
 environment_name_vpc: takeon-dev-sandbox-vpc
 user: larissa
-=======
-egest_state_file: takeon-egestion/dev/matt/terraform.tfstate
-environment_name: takeon-dev-sandbox
-environment_name_vpc: takeon-dev-sandbox-vpc
-user: matt
->>>>>>> 3a293b23fbf1518a516b8e26d84b0c2cb43b9353
-stage: dev 
