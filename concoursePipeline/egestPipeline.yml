@@ -105,7 +105,24 @@ jobs:
             environment_name_vpc: {{environment_name_vpc}}
             user: {{user}}
             aws_access_key: ((aws.aws_access_key))
-            aws_secret_access_key: ((aws.aws_secret_access_key))    
+            aws_secret_access_key: ((aws.aws_secret_access_key))
+    
+  - name: terraform-egest-destroy
+    plan:
+      - get: takeon-egest-pipeline-git-repo
+      - put: egest-terraform-state
+        params:
+          action: destroy
+          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
+          env_name: {{environment_name}}
+          vars:
+            environment_name: {{environment_name}}
+            environment_name_vpc: {{environment_name_vpc}}
+            user: {{user}}
+            aws_access_key: ((aws.aws_access_key))
+            aws_secret_access_key: ((aws.aws_secret_access_key))
+        get_params:
+          action: destroy        
 
   - name: egest-deploy
     plan:

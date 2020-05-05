@@ -95,7 +95,7 @@ data "aws_subnet" "private-subnet2" {
 }
 
 
-# Ingest pck to json lambda
+# dbexport lambda
 
 resource "aws_lambda_function" "db-export-lambda" {
   function_name = "takeon-db-export-lambda-${var.user}-dev-main"
