@@ -20,7 +20,7 @@ resources:
   - name: ecr-image-egest
     type: docker-image
     source:
-      repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
+      repository: {{ecr_repo}}
       tag: egestion
       aws_access_key_id: ((aws.aws_access_key))
       aws_secret_access_key: ((aws.aws_secret_access_key))
@@ -36,18 +36,18 @@ resources:
     type: git
     check_every: 24h
     source:
-      uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+      uri: {{git_url}}
       paths: 
         - takeon-dbexport/
-      branch: dev
+      branch: {{branch}}
   
   - name: takeon-egest-pipeline-git-repo
     type: git
     source:
-      uri: https://github.com/ONSdigital/takeon-egest-pipeline.git
+      uri: {{git_url}}
       paths:
         - aws-infrastructure/
-      branch: feature/LU-5452-egestPipeline
+      branch: {{feature_branch}}
 
   - name: egest-terraform-state
     type: terraform
@@ -134,7 +134,7 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
+              repository: {{ecr_repo}}
               tag: egestion
               aws_access_key_id: ((aws.aws_access_key))
               aws_secret_access_key: ((aws.aws_secret_access_key))
