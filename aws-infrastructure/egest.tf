@@ -94,6 +94,11 @@ data "aws_subnet" "private-subnet2" {
   }
 }
 
+data "aws_lb" "business-layer-lb" {
+    name = "${var.environment_name}-${var.user}-bl"
+}
+
+
 
 # dbexport lambda
 
@@ -109,7 +114,7 @@ resource "aws_lambda_function" "db-export-lambda" {
   } 
   environment {
     variables = {
-        GRAPHQL_ENDPOINT: "http://<url here>:8088/contributor/dbExport",
+        GRAPHQL_ENDPOINT: "http://${data.aws_lb.business-layer-lb.dns_name}:8088/contributor/dbExport",
         S3_BUCKET       : aws_s3_bucket.export.id
     }
   }
