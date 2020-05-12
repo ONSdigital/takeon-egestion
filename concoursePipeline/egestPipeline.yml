@@ -90,45 +90,12 @@ jobs:
           cache_tag: egestion
         get_params:
           skip_download: true
-
-  - name: terraform-egest-apply
-    plan:
-      - get: takeon-egest-pipeline-git-repo
-        trigger: true
-      - put: egest-terraform-state
-        params:
-          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
-          action: apply
-          env_name: {{environment_name}}
-          vars:
-            environment_name: {{environment_name}}
-            environment_name_vpc: {{environment_name_vpc}}
-            user: {{user}}
-            aws_access_key: ((aws.aws_access_key))
-            aws_secret_access_key: ((aws.aws_secret_access_key))
-    
-  - name: terraform-egest-destroy
-    plan:
-      - get: takeon-egest-pipeline-git-repo
-      - put: egest-terraform-state
-        params:
-          action: destroy
-          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
-          env_name: {{environment_name}}
-          vars:
-            environment_name: {{environment_name}}
-            environment_name_vpc: {{environment_name_vpc}}
-            user: {{user}}
-            aws_access_key: ((aws.aws_access_key))
-            aws_secret_access_key: ((aws.aws_secret_access_key))
-        get_params:
-          action: destroy        
-
+      
   - name: egest-deploy
     plan:
       - get: egest-deploy-repository
         trigger: true
-      - task: serverless-aws
+      - task: serverless-deploy
         config:
           platform: linux
           image_resource:
@@ -156,5 +123,38 @@ jobs:
                 go get -t -v ./...
                 env GOOS=linux go build  -o bin/main
                 serverless package --package pkg
-
                 serverless deploy --function main --stage {{user}} --deploymentBucket {{deployment_bucket_name}}
+
+  - name: terraform-egest-apply
+    plan:
+      - get: takeon-egest-pipeline-git-repo
+        trigger: true
+      - put: egest-terraform-state
+        params:
+          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
+          action: apply
+          env_name: {{environment_name}}
+          vars:
+            environment_name: {{environment_name}}
+            environment_name_vpc: {{environment_name_vpc}}
+            user: {{user}}
+            aws_access_key: ((aws.aws_access_key))
+            aws_secret_access_key: ((aws.aws_secret_access_key))
+            bucket_name: {{deployment_bucket_name}}
+    
+  - name: terraform-egest-destroy
+    plan:
+      - get: takeon-egest-pipeline-git-repo
+      - put: egest-terraform-state
+        params:
+          action: destroy
+          terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
+          env_name: {{environment_name}}
+          vars:
+            environment_name: {{environment_name}}
+            environment_name_vpc: {{environment_name_vpc}}
+            user: {{user}}
+            aws_access_key: ((aws.aws_access_key))
+            aws_secret_access_key: ((aws.aws_secret_access_key))
+        get_params:
+          action: destroy        

@@ -98,7 +98,7 @@ data "aws_subnet" "private-subnet2" {
 # dbexport lambda
 
 resource "aws_lambda_function" "db-export-lambda" {
-  function_name = "takeon-db-export-lambda-${var.user}-dev-main"
+  function_name = "takeon-db-export-lambda-${var.user}-main"
   role = aws_iam_role.iam_for_lambda.arn
   handler = "bin/main"
   runtime = "go1.x"
