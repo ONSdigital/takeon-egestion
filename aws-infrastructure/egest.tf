@@ -76,21 +76,21 @@ data "archive_file" "dummy" {
 data "aws_security_group" "private-securitygroup" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-securitygroup"]
+    values = ["${var.environment_name}-${var.user}-private-securitygroup"]
   }
 }
 
 data "aws_subnet" "private-subnet" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet"]
+    values = ["${var.environment_name}-${var.user}-private-subnet"]
   }
 }
 
 data "aws_subnet" "private-subnet2" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet2"]
+    values = ["${var.environment_name}-${var.user}-private-subnet2"]
   }
 }
 
