@@ -47,7 +47,7 @@ resources:
       uri: {{git_url}}
       paths:
         - aws-infrastructure/
-      branch: {{feature_branch}}
+      branch: {{branch}}
 
   - name: egest-terraform-state
     type: terraform
@@ -156,4 +156,5 @@ jobs:
                 go get -t -v ./...
                 env GOOS=linux go build  -o bin/main
                 serverless package --package pkg
-                serverless deploy --verbose;
+
+                serverless deploy --function main --stage {{user}} --deploymentBucket {{deployment_bucket_name}}

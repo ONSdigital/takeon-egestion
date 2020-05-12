@@ -1,10 +1,12 @@
 aws_region: eu-west-2
-egest_state_file: takeon-egestion/{STAGE}/{USER}/terraform.tfstate
+egest_state_file: takeon-egestion/dev/#user/terraform.tfstate
+# ingest/dev/#user/terraform.tfstate
 environment_name: takeon-dev-sandbox
 environment_name_vpc: takeon-dev-sandbox-vpc
 user: 
 git_url: https://github.com/ONSdigital/takeon-egest-pipeline.git
-branch: dev
+branch: feature/reworks
 ecr_repo: 226575302242.dkr.ecr.eu-west-2.amazonaws.com/takeon-validation-cicd
-feature_branch: 
+deployment_bucket_name: deployment_bucket_egest_test
+
 
