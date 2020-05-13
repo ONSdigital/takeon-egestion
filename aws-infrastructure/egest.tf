@@ -99,7 +99,6 @@ data "aws_lb" "business-layer-lb" {
 }
 
 # dbexport lambda
-
 resource "aws_lambda_function" "db-export-lambda" {
   function_name = "takeon-db-export-lambda-${var.user}-main"
   role = aws_iam_role.iam_for_lambda.arn
