@@ -98,8 +98,6 @@ data "aws_lb" "business-layer-lb" {
     name = "${var.environment_name}-${var.user}-bl"
 }
 
-
-
 # dbexport lambda
 
 resource "aws_lambda_function" "db-export-lambda" {
