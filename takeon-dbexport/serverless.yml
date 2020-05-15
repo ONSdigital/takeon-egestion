@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: takeon-db-export-lambda-${env:user} # NOTE: update this with your service name
+service: takeon-db-export-lambda # NOTE: update this with your service name
 #app: your-app-name
 #tenant: your-tenant-name
 
@@ -24,7 +24,10 @@ provider:
   name: aws
   runtime: go1.x
   region: eu-west-2
-  deploymentBucket: takeon.validation.sandbox.deployment.${env:user}
+  # deploymentBucket: takeon.validation.sandbox.deployment.${env:user}
+  deploymentBucket: ${opt:deploymentBucket}
+  stage: ${opt:stage,'dev'}
+
 
 package:
  exclude:
@@ -40,5 +43,3 @@ package:
 functions:
   main:
     handler: bin/main
-    timeout: 30
-    memorySize: 512
