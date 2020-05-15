@@ -1,17 +1,11 @@
-# Setting the provider
-
-provider "aws" {
-  region = "eu-west-2"
-}
-
 # Defining s3 bucket for export
 
 resource "aws_s3_bucket" "export" {
-  bucket = "${var.environment_name}-export-bucket"
+  bucket = "${var.environment_name}-${var.user}-export-bucket"
   acl    = "private"
 
   tags = {
-    Name = "${var.environment_name}-Export-Bucket"
+    Name = "${var.environment_name}-${var.user}-Export-Bucket"
     App  = "takeon"
   }
 }
@@ -21,7 +15,7 @@ resource "aws_s3_bucket" "export" {
 # Separate Lambda role for egestion
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name = "${var.environment_name}-egestion-lambda-role"
+  name = "${var.environment_name}-${var.user}-egestion-lambda-role"
 
   assume_role_policy = <<EOF
 {
@@ -82,29 +76,31 @@ data "archive_file" "dummy" {
 data "aws_security_group" "private-securitygroup" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-securitygroup"]
+    values = ["${var.environment_name}-${var.user}-private-securitygroup"]
   }
 }
 
 data "aws_subnet" "private-subnet" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet"]
+    values = ["${var.environment_name}-${var.user}-private-subnet"]
   }
 }
 
 data "aws_subnet" "private-subnet2" {
   filter {
     name = "tag:Name"
-    values = ["${var.environment_name}-private-subnet2"]
+    values = ["${var.environment_name}-${var.user}-private-subnet2"]
   }
 }
 
+data "aws_lb" "business-layer-lb" {
+    name = "${var.environment_name}-${var.user}-bl"
+}
 
-# Ingest pck to json lambda
-
+# dbexport lambda
 resource "aws_lambda_function" "db-export-lambda" {
-  function_name = "takeon-db-export-lambda-dev-main"
+  function_name = "takeon-db-export-lambda-${var.user}-main"
   role = aws_iam_role.iam_for_lambda.arn
   handler = "bin/main"
   runtime = "go1.x"
@@ -115,7 +111,7 @@ resource "aws_lambda_function" "db-export-lambda" {
   } 
   environment {
     variables = {
-        GRAPHQL_ENDPOINT: "http://<url here>:8088/contributor/dbExport",
+        GRAPHQL_ENDPOINT: "http://${data.aws_lb.business-layer-lb.dns_name}/contributor/dbExport",
         S3_BUCKET       : aws_s3_bucket.export.id
     }
   }
