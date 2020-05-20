@@ -9,4 +9,8 @@ You will also need to amend the lambda function name so as to not overwrite what
 
 # git versioning
 
+To tag a new release, use the command `git tag -a <tag eg. v1.0> -m <tag message eg. new feature release>`
 
+Then run `git push origin <tag>`
+
+This will trigger the concourse pipeline to build from the latest version
