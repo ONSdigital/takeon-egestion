@@ -40,6 +40,7 @@ resources:
       paths: 
         - takeon-dbexport/
       branch: {{branch}}
+      tag_filter: v*
   
   - name: takeon-egest-pipeline-git-repo
     type: git
@@ -48,7 +49,7 @@ resources:
       paths:
         - aws-infrastructure/
       branch: {{branch}}
-
+      tag_filter: v*
   - name: egest-terraform-state
     type: terraform
     source:
