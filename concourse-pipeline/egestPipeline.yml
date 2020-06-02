@@ -22,8 +22,8 @@ resources:
     source:
       repository: {{ecr_repo}}
       tag: egestion
-      aws_access_key_id: ((aws.aws_access_key))
-      aws_secret_access_key: ((aws.aws_secret_access_key))
+      aws_access_key_id: ((aws.aws_((user))_access_key))
+      aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
 
   - name: egest-repository
     type: pull-request
@@ -59,18 +59,18 @@ resources:
         bucket: takeon-terraform-state
         key: {{egest_state_file}}
         region: {{aws_region}}
-        access_key: ((aws.aws_access_key))
-        secret_key: ((aws.aws_secret_access_key))
+        access_key: ((aws.aws_((user))_access_key))
+        secret_key: ((aws.aws_((user))_secret_access_key))
         dynamodb_table: takeon-terraform-state
         vars:
           environment_name: {{environment_name}}
           environment_name_vpc: {{environment_name_vpc}}
           user: {{user}}
-          aws_access_key: ((aws.aws_access_key))
-          aws_secret_access_key: ((aws.aws_secret_access_key))
+          aws_access_key: ((aws.aws_((user))_access_key))
+          aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
         env:
-          AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
-          AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))   
+          AWS_ACCESS_KEY_ID: ((aws.aws_((user))_access_key))
+          AWS_SECRET_ACCESS_KEY: ((aws.aws_((user))_secret_access_key))   
 
 jobs:
   - name: installing-dependencies-egest
@@ -104,11 +104,11 @@ jobs:
             source:
               repository: {{ecr_repo}}
               tag: egestion
-              aws_access_key_id: ((aws.aws_access_key))
-              aws_secret_access_key: ((aws.aws_secret_access_key))
+              aws_access_key_id: ((aws.aws_((user))_access_key))
+              aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
           params:
-            AWS_ACCESS_KEY_ID: ((aws.aws_access_key))
-            AWS_SECRET_ACCESS_KEY: ((aws.aws_secret_access_key))
+            AWS_ACCESS_KEY_ID: ((aws.aws_((user))_access_key))
+            AWS_SECRET_ACCESS_KEY: ((aws.aws_((user))_secret_access_key))
             SLS_DEBUG: 1
           inputs:
             - name: egest-deploy-repository
@@ -118,7 +118,7 @@ jobs:
             args:
               - -c
               - |
-                SRCPATH=$PWD/go/src/github.com/takeon-egest-pipeline/takeon-dbexport
+                SRCPATH=$PWD/go/src/github.com/takeon-egestion/takeon-dbexport
                 GOPATH=$PWD/go
                 cd $SRCPATH
                 go get -t -v ./...
@@ -139,8 +139,8 @@ jobs:
             environment_name: {{environment_name}}
             environment_name_vpc: {{environment_name_vpc}}
             user: {{user}}
-            aws_access_key: ((aws.aws_access_key))
-            aws_secret_access_key: ((aws.aws_secret_access_key))
+            aws_access_key: ((aws.aws_((user))_access_key))
+            aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
             bucket_name: {{deployment_bucket_name}}
     
   - name: terraform-egest-destroy
@@ -155,7 +155,7 @@ jobs:
             environment_name: {{environment_name}}
             environment_name_vpc: {{environment_name_vpc}}
             user: {{user}}
-            aws_access_key: ((aws.aws_access_key))
-            aws_secret_access_key: ((aws.aws_secret_access_key))
+            aws_access_key: ((aws.aws_((user))_access_key))
+            aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
         get_params:
           action: destroy        
