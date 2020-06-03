@@ -20,7 +20,7 @@ resources:
   - name: ecr-image-egest
     type: docker-image
     source:
-      repository: {{ecr_repo}}
+      repository: ((ecr_repo))
       tag: egestion
       aws_access_key_id: ((aws.aws_((user))_access_key))
       aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
@@ -36,36 +36,36 @@ resources:
     type: git
     check_every: 24h
     source:
-      uri: {{git_url}}
+      uri: ((git_url))
       paths: 
         - takeon-dbexport/
-      branch: {{branch}}
+      branch: ((branch))
       tag_filter: v*
   
   - name: takeon-egest-pipeline-git-repo
     type: git
     source:
-      uri: {{git_url}}
+      uri: ((git_url))
       paths:
         - aws-infrastructure/
-      branch: {{branch}}
+      branch: ((branch))
       tag_filter: v*
   - name: egest-terraform-state
     type: terraform
     source:
       backend_type: s3
-      env_name: {{environment_name}}
+      env_name: ((environment_name))
       backend_config:
-        bucket: takeon-terraform-state
-        key: {{egest_state_file}}
-        region: {{aws_region}}
+        bucket: ((state_bucket_dynamodb_tab))
+        key: ((egest_state_file))
+        region: ((aws_region))
         access_key: ((aws.aws_((user))_access_key))
         secret_key: ((aws.aws_((user))_secret_access_key))
-        dynamodb_table: takeon-terraform-state
+        dynamodb_table: ((state_bucket_dynamodb_tab))
         vars:
-          environment_name: {{environment_name}}
-          environment_name_vpc: {{environment_name_vpc}}
-          user: {{user}}
+          environment_name: ((environment_name))
+          environment_name_vpc: ((environment_name_vpc))
+          user: ((user))
           aws_access_key: ((aws.aws_((user))_access_key))
           aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
         env:
@@ -102,7 +102,7 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: {{ecr_repo}}
+              repository: ((ecr_repo))
               tag: egestion
               aws_access_key_id: ((aws.aws_((user))_access_key))
               aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
@@ -118,13 +118,13 @@ jobs:
             args:
               - -c
               - |
-                SRCPATH=$PWD/go/src/github.com/takeon-egestion/takeon-dbexport
+                SRCPATH=$PWD/go/src/github.com/takeon-egest-pipeline/takeon-dbexport
                 GOPATH=$PWD/go
                 cd $SRCPATH
                 go get -t -v ./...
                 env GOOS=linux go build  -o bin/main
                 serverless package --package pkg
-                serverless deploy --function main --stage {{user}} --deploymentBucket {{deployment_bucket_name}}
+                serverless deploy --function main --stage ((user)) --deploymentBucket ((deployment_bucket_name))
 
   - name: terraform-egest-apply
     plan:
@@ -134,14 +134,14 @@ jobs:
         params:
           terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
           action: apply
-          env_name: {{environment_name}}
+          env_name: ((environment_name))
           vars:
-            environment_name: {{environment_name}}
-            environment_name_vpc: {{environment_name_vpc}}
-            user: {{user}}
+            environment_name: ((environment_name))
+            environment_name_vpc: ((environment_name_vpc))
+            user: ((user))
             aws_access_key: ((aws.aws_((user))_access_key))
             aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
-            bucket_name: {{deployment_bucket_name}}
+            bucket_name: ((deployment_bucket_name))
     
   - name: terraform-egest-destroy
     plan:
@@ -150,11 +150,11 @@ jobs:
         params:
           action: destroy
           terraform_source: takeon-egest-pipeline-git-repo/aws-infrastructure/
-          env_name: {{environment_name}}
+          env_name: ((environment_name))
           vars:
-            environment_name: {{environment_name}}
-            environment_name_vpc: {{environment_name_vpc}}
-            user: {{user}}
+            environment_name: ((environment_name))
+            environment_name_vpc: ((environment_name_vpc))
+            user: ((user))
             aws_access_key: ((aws.aws_((user))_access_key))
             aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
         get_params:
