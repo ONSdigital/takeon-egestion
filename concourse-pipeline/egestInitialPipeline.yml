@@ -13,8 +13,8 @@ resources:
     source:
       repository: {{ecr_repo}}
       tag: egestion
-      aws_access_key_id: ((aws.aws_((user))_access_key))
-      aws_secret_access_key: ((aws.aws_((user))_secret_access_key))
+      aws_access_key_id: ((aws.aws_((aws_key_prefix))_access_key))
+      aws_secret_access_key: ((aws.aws_((aws_key_prefix))_secret_access_key))
 
 jobs:
   - name: installing-dependencies-egest

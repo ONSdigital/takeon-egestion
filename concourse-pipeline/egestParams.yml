@@ -7,4 +7,5 @@ git_url:
 branch: 
 ecr_repo: 
 deployment_bucket_name: 
-state_bucket_dynamodb_tab: 
+state_bucket_dynamodb_tab:
+aws_key_prefix:
