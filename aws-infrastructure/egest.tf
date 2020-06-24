@@ -141,3 +141,19 @@ resource "aws_lambda_function" "export" {
     }
   )
 }
+
+
+#########################################################
+# Create image repository locations for lambda containers
+#########################################################
+
+resource "aws_ecr_repository" "export" {
+  name = "${local.name_prefix}-export"
+  tags = merge(
+    var.common_tags,
+    {
+    Name       = "${local.name_prefix}-export",
+    "ons:name" = "${local.name_prefix}-export"
+    }
+  )
+}
