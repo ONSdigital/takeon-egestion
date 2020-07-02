@@ -43,7 +43,7 @@ func callGraphqlEndpoint(cdbExport chan string) {
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport <- string(data)
-		fmt.Println("Accessing Graphql Endpoint done\n")
+		fmt.Println("Accessing Graphql Endpoint done")
 	}
 }
 
