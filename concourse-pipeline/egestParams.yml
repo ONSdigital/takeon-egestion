@@ -9,3 +9,4 @@ ecr_repo:
 deployment_bucket_name: 
 state_bucket_dynamodb_tab:
 aws_key_prefix:
+tag:
