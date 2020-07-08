@@ -6,7 +6,7 @@ resources:
       branch: {{branch}}
       paths: 
         - takeon-dbexport/
-      tag_filter: v*
+      tag_filter: ((tag))
 
   - name: ecr-image-egest
     type: docker-image
