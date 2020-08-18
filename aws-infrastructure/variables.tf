@@ -1,6 +1,7 @@
 variable "environment_name" {}
 variable "region" {}
-variable "aws_account" {}
+variable "role_arn" {}
+variable "account_environment_name" {}
 
 # Define the standard AWS tags
 variable "common_tags" {

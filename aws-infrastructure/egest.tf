@@ -1,7 +1,10 @@
 # Set Provider as AWS and region
 provider "aws" {
-    region = var.region
-    version = "~> 2"
+  region = var.region
+  version = "~> 3"
+  assume_role {
+      role_arn = var.role_arn
+  }
 }
 
 terraform {
