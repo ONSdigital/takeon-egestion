@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -24,8 +26,12 @@ func main() {
 
 }
 
-func handle() {
+func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	fmt.Println("Starting the application...")
+
+	for _, message := range sqsEvent.Records {
+		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
+	}
 
 	go readFromSqs()
 
