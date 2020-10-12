@@ -33,13 +33,12 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 	}
 
-	go readFromSqs()
-
 	cdbExport := make(chan string)
 	go callGraphqlEndpoint(cdbExport)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go saveToS3(cdbExport, &wg)
+	go sendToSqs()
 	wg.Wait()
 }
 
@@ -93,9 +92,9 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 }
 
-func readFromSqs() {
+func sendToSqs() {
 
-	queue := aws.String("spp-es-takeon-db-export-input")
+	queue := aws.String("spp-es-takeon-db-export-output")
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
@@ -116,18 +115,42 @@ func readFromSqs() {
 
 	queueURL := urlResult.QueueUrl
 
-	msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
-		AttributeNames: []*string{
-			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
+	// msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
+	// 	AttributeNames: []*string{
+	// 		aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
+	// 	},
+	// 	MessageAttributeNames: []*string{
+	// 		aws.String(sqs.QueueAttributeNameAll),
+	// 	},
+	// 	QueueUrl:            queueURL,
+	// 	MaxNumberOfMessages: aws.Int64(1),
+	// 	VisibilityTimeout:   aws.Int64(5),
+	// })
+
+	// fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
+
+	_, error := svc.SendMessage(&sqs.SendMessageInput{
+		DelaySeconds: aws.Int64(10),
+		MessageAttributes: map[string]*sqs.MessageAttributeValue{
+			"Title": &sqs.MessageAttributeValue{
+				DataType:    aws.String("String"),
+				StringValue: aws.String("The Whistler"),
+			},
+			"Author": &sqs.MessageAttributeValue{
+				DataType:    aws.String("String"),
+				StringValue: aws.String("John Grisham"),
+			},
+			"WeeksOn": &sqs.MessageAttributeValue{
+				DataType:    aws.String("Number"),
+				StringValue: aws.String("6"),
+			},
 		},
-		MessageAttributeNames: []*string{
-			aws.String(sqs.QueueAttributeNameAll),
-		},
-		QueueUrl:            queueURL,
-		MaxNumberOfMessages: aws.Int64(1),
-		VisibilityTimeout:   aws.Int64(5),
+		MessageBody: aws.String("Information about current NY Times fiction bestseller for week of 12/11/2016."),
+		QueueUrl:    queueURL,
 	})
 
-	fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
+	if error != nil {
+		fmt.Printf("Unable to send to DB Export output queue %q, %q", *queue, error)
+	}
 
 }
