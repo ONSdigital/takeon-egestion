@@ -128,3 +128,5 @@ func sendToSqs(sess) {
 	fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
 
  }
+
+ 
