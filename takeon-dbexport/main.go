@@ -33,6 +33,8 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 	}
 
+	//go validateSqsMessage(message.Body)
+
 	cdbExport := make(chan string)
 	go callGraphqlEndpoint(cdbExport)
 	var wg sync.WaitGroup
@@ -115,20 +117,6 @@ func sendToSqs() {
 
 	queueURL := urlResult.QueueUrl
 
-	// msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
-	// 	AttributeNames: []*string{
-	// 		aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
-	// 	},
-	// 	MessageAttributeNames: []*string{
-	// 		aws.String(sqs.QueueAttributeNameAll),
-	// 	},
-	// 	QueueUrl:            queueURL,
-	// 	MaxNumberOfMessages: aws.Int64(1),
-	// 	VisibilityTimeout:   aws.Int64(5),
-	// })
-
-	// fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
-
 	_, error := svc.SendMessage(&sqs.SendMessageInput{
 		DelaySeconds: aws.Int64(10),
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
@@ -154,3 +142,7 @@ func sendToSqs() {
 	}
 
 }
+
+// func validateSqsMessage(string message) string {
+// 	return ""
+// }
