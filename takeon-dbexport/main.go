@@ -76,7 +76,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 	// 	Region: aws.String(region),
 	// }
 
-	// sess := session.New(config)
+	sess := session.New(config)
 
 	uploader := s3manager.NewUploader(sess)
 
