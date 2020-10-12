@@ -89,7 +89,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 func readFromSqs() {
 
-	queue := aws.String("db-export-input")
+	queue := aws.String("spp-es-takeon-db-export-input")
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
