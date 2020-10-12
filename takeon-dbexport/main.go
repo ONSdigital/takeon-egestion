@@ -13,9 +13,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
 var region = os.Getenv("AWS_REGION")
+var queueName = "db-export-input"
 
 func main() {
 
@@ -23,8 +25,23 @@ func main() {
 
 }
 
+func createSession() {
+	fmt.Printf("Region: %q\n", region)
+	config := &aws.Config{
+		Region: aws.String(region),
+	}
+
+	sess := session.New(config)
+
+	return sess
+}
+
+
 func handle() {
-	fmt.Println("Starting the application...")
+	fmt.Println("Starting the application...")\
+
+	session := createSession()
+	go sendToSqs(session)
 
 	cdbExport := make(chan string)
 	go callGraphqlEndpoint(cdbExport)
@@ -54,12 +71,12 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 	currentTime := time.Now().Format("2006-01-02-15:04:05")
 
-	fmt.Printf("Region: %q\n", region)
-	config := &aws.Config{
-		Region: aws.String(region),
-	}
+	// fmt.Printf("Region: %q\n", region)
+	// config := &aws.Config{
+	// 	Region: aws.String(region),
+	// }
 
-	sess := session.New(config)
+	// sess := session.New(config)
 
 	uploader := s3manager.NewUploader(sess)
 
@@ -83,3 +100,31 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 
 }
+
+
+func sendToSqs(sess) {
+	
+	svc := sqs.New(sess)
+
+	urlResult, err := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName: queue,
+	})
+
+	queueURL := urlResult.QueueUrl
+	int timeout := 5
+
+	msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
+		AttributeNames: []*string{
+			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
+		},
+		MessageAttributeNames: []*string{
+			aws.String(sqs.QueueAttributeNameAll),
+		},
+		QueueUrl:            queueURL,
+		MaxNumberOfMessages: aws.Int64(1),
+		VisibilityTimeout:   timeout,
+	})
+
+	fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
+
+ }
