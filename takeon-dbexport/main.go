@@ -17,7 +17,6 @@ import (
 )
 
 var region = os.Getenv("AWS_REGION")
-var queueName = "db-export-input"
 
 func main() {
 
@@ -25,23 +24,10 @@ func main() {
 
 }
 
-func createSession() {
-	fmt.Printf("Region: %q\n", region)
-	config := &aws.Config{
-		Region: aws.String(region),
-	}
-
-	sess := session.New(config)
-
-	return sess
-}
-
-
 func handle() {
-	fmt.Println("Starting the application...")\
+	fmt.Println("Starting the application...")
 
-	session := createSession()
-	go sendToSqs(session)
+	go readFromSqs()
 
 	cdbExport := make(chan string)
 	go callGraphqlEndpoint(cdbExport)
@@ -71,10 +57,10 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 	currentTime := time.Now().Format("2006-01-02-15:04:05")
 
-	// fmt.Printf("Region: %q\n", region)
-	// config := &aws.Config{
-	// 	Region: aws.String(region),
-	// }
+	fmt.Printf("Region: %q\n", region)
+	config := &aws.Config{
+		Region: aws.String(region),
+	}
 
 	sess := session.New(config)
 
@@ -101,17 +87,28 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 }
 
+func readFromSqs() {
 
-func sendToSqs(sess) {
-	
+	queue := aws.String("db-export-input")
+
+	fmt.Printf("Region: %q\n", region)
+	config := &aws.Config{
+		Region: aws.String(region),
+	}
+
+	sess := session.New(config)
+
 	svc := sqs.New(sess)
 
 	urlResult, err := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: queue,
 	})
 
+	if err != nil {
+		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
+	}
+
 	queueURL := urlResult.QueueUrl
-	int timeout := 5
 
 	msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
 		AttributeNames: []*string{
@@ -122,11 +119,9 @@ func sendToSqs(sess) {
 		},
 		QueueUrl:            queueURL,
 		MaxNumberOfMessages: aws.Int64(1),
-		VisibilityTimeout:   timeout,
+		VisibilityTimeout:   aws.Int64(5),
 	})
 
 	fmt.Println("Message Handle: " + *msgResult.Messages[0].ReceiptHandle)
 
- }
-
- 
+}
