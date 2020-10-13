@@ -20,6 +20,8 @@ import (
 
 var region = os.Getenv("AWS_REGION")
 
+// type InputJson struct {}
+
 func main() {
 
 	lambda.Start(handle)
@@ -30,22 +32,28 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	fmt.Println("Starting the application...")
 
 	fmt.Println("Event: ", sqsEvent.Records)
-	message := ""
 
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
-		//message := message.Body
+		queueMessage := message.Body
+		cdbExport := make(chan string)
+		go callGraphqlEndpoint(cdbExport, queueMessage)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go saveToS3(cdbExport, &wg)
+		go sendToSqs()
+		wg.Wait()
 	}
 
 	//go validateSqsMessage(message.Body)
 
-	cdbExport := make(chan string)
-	go callGraphqlEndpoint(cdbExport, message)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go saveToS3(cdbExport, &wg)
-	go sendToSqs()
-	wg.Wait()
+	// cdbExport := make(chan string)
+	// go callGraphqlEndpoint(cdbExport, queueMessage)
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go saveToS3(cdbExport, &wg)
+	// go sendToSqs()
+	// wg.Wait()
 }
 
 func callGraphqlEndpoint(cdbExport chan string, message string) {
