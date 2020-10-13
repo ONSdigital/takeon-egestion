@@ -36,7 +36,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	//go validateSqsMessage(message.Body)
 
 	cdbExport := make(chan string)
-	go callGraphqlEndpoint(cdbExport)
+	go callGraphqlEndpoint(cdbExport, message.Body)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go saveToS3(cdbExport, &wg)
