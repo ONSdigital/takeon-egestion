@@ -44,10 +44,11 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	wg.Wait()
 }
 
-func callGraphqlEndpoint(cdbExport chan string) {
+func callGraphqlEndpoint(cdbExport chan string, message string) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
-	response, err := http.Get(gqlEndpoint)
+	// response, err := http.Get(gqlEndpoint)
+	response, err := http.NewRequest("GET", gqlEndpoint, message)
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 	} else {
