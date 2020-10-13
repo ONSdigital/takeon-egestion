@@ -176,3 +176,17 @@ resource "aws_lambda_event_source_mapping" "db-export-trigger" {
   event_source_arn = aws_sqs_queue.db-export-input.arn
   function_name = aws_lambda_function.export.arn
 }
+
+
+# Dead letter queue
+resource "aws_sqs_queue" "dlq" {
+  name = "${local.name_prefix}-export-dlq"
+
+    tags = merge(
+        var.common_tags,
+        {
+        Name = "${local.name_prefix}-export-dlq",
+        "ons:name" = "${local.name_prefix}-export-dlq"
+        }
+    )
+}
