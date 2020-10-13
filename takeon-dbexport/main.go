@@ -29,9 +29,12 @@ func main() {
 func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	fmt.Println("Starting the application...")
 
+	fmt.Println("Event: ", sqsEvent.Records)
+	message := ""
+
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
-		message := message.Body
+		//message := message.Body
 	}
 
 	//go validateSqsMessage(message.Body)
