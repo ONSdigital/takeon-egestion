@@ -130,6 +130,7 @@ resource "aws_lambda_function" "export" {
     variables = {
         GRAPHQL_ENDPOINT: "http://${data.aws_lb.business-layer.dns_name}/contributor/dbExport",
         S3_BUCKET       : aws_s3_bucket.export.id
+        DB_EXPORT_OUTPUT_QUEUE: "${local.name_prefix}-db-export-output"
     }
   }
 

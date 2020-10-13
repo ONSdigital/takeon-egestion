@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -20,7 +20,24 @@ import (
 
 var region = os.Getenv("AWS_REGION")
 
-// type InputJson struct {}
+// SurveyPeriods arrays in JSON message
+type SurveyPeriods struct {
+	Survey string
+	Period string
+}
+
+// InputJSON contains snapshot_id and array of surveyperiod combinations
+type InputJSON struct {
+	SnapshotID    string
+	SurveyPeriods []SurveyPeriods
+}
+
+// OutputMessage to send to export-output queue
+type OutputMessage struct {
+	SnapshotID string `json:"snapshot_id"`
+	Location   string `json:"location"`
+	Successful bool   `json:"successful"`
+}
 
 func main() {
 
@@ -40,20 +57,18 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		go callGraphqlEndpoint(cdbExport, queueMessage)
 		var wg sync.WaitGroup
 		wg.Add(1)
-		go saveToS3(cdbExport, &wg)
-		go sendToSqs()
+		messageDetails := []byte(queueMessage)
+		var messageJSON InputJSON
+		parseError := json.Unmarshal(messageDetails, &messageJSON)
+		if parseError != nil {
+			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
+		}
+		snapshotID := messageJSON.SnapshotID
+		survey := messageJSON.SurveyPeriods[0].Survey
+		filename := saveToS3(cdbExport, &wg, survey, snapshotID)
+		go sendToSqs(snapshotID, filename)
 		wg.Wait()
 	}
-
-	//go validateSqsMessage(message.Body)
-
-	// cdbExport := make(chan string)
-	// go callGraphqlEndpoint(cdbExport, queueMessage)
-	// var wg sync.WaitGroup
-	// wg.Add(1)
-	// go saveToS3(cdbExport, &wg)
-	// go sendToSqs()
-	// wg.Wait()
 }
 
 func callGraphqlEndpoint(cdbExport chan string, message string) {
@@ -61,7 +76,6 @@ func callGraphqlEndpoint(cdbExport chan string, message string) {
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	//response, err := http.Get(gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	//response, err := http.NewRequest("GET", gqlEndpoint, strings.NewReader(message))
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 	} else {
@@ -71,12 +85,12 @@ func callGraphqlEndpoint(cdbExport chan string, message string) {
 	}
 }
 
-func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
+func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string) string {
 
 	dbExport := <-cdbExport
-	var bucketFilenamePrefix = "takeon-data-export-"
+	var bucketFilenamePrefix = "snapshot-"
 
-	currentTime := time.Now().Format("2006-01-02-15:04:05")
+	//currentTime := time.Now().Format("2006-01-02-15:04:05")
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
@@ -88,7 +102,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 	uploader := s3manager.NewUploader(sess)
 
 	bucket := os.Getenv("S3_BUCKET")
-	filename := strings.Join([]string{bucketFilenamePrefix, currentTime}, "")
+	filename := strings.Join([]string{bucketFilenamePrefix, survey, snapshotID}, "")
 	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
@@ -105,12 +119,13 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup) {
 
 	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
 	waitGroup.Done()
+	return filename
 
 }
 
-func sendToSqs() {
+func sendToSqs(snapshotid string, filename string) {
 
-	queue := aws.String("spp-es-takeon-db-export-output")
+	queue := aws.String(os.Getenv("DB_EXPORT_OUTPUT_QUEUE"))
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
@@ -131,23 +146,20 @@ func sendToSqs() {
 
 	queueURL := urlResult.QueueUrl
 
+	outputMessage := &OutputMessage{
+		SnapshotID: snapshotid,
+		Location:   filename,
+		Successful: true,
+	}
+
+	DataToSend, err := json.Marshal(outputMessage)
+	if err != nil {
+		fmt.Printf("An error occured while marshaling DatToSend: %s", err)
+	}
+	fmt.Printf("DataToSend %v\n", string(DataToSend))
+
 	_, error := svc.SendMessage(&sqs.SendMessageInput{
-		DelaySeconds: aws.Int64(10),
-		MessageAttributes: map[string]*sqs.MessageAttributeValue{
-			"Title": &sqs.MessageAttributeValue{
-				DataType:    aws.String("String"),
-				StringValue: aws.String("The Whistler"),
-			},
-			"Author": &sqs.MessageAttributeValue{
-				DataType:    aws.String("String"),
-				StringValue: aws.String("John Grisham"),
-			},
-			"WeeksOn": &sqs.MessageAttributeValue{
-				DataType:    aws.String("Number"),
-				StringValue: aws.String("6"),
-			},
-		},
-		MessageBody: aws.String("Information about current NY Times fiction bestseller for week of 12/11/2016."),
+		MessageBody: aws.String(string(DataToSend)),
 		QueueUrl:    queueURL,
 	})
 
@@ -156,7 +168,3 @@ func sendToSqs() {
 	}
 
 }
-
-// func validateSqsMessage(string message) string {
-// 	return ""
-// }
