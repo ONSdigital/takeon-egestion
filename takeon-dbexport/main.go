@@ -59,18 +59,20 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		if parseError != nil {
 			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
 		}
+		snapshotID := messageJSON.SnapshotID
+		survey := messageJSON.SurveyPeriods[0].Survey
+		period := messageJSON.SurveyPeriods[0].Period
 
 		cdbExport := make(chan string)
 		go callGraphqlEndpoint(cdbExport, queueMessage)
 		var wg sync.WaitGroup
 		wg.Add(1)
 
-		snapshotID := messageJSON.SnapshotID
-		survey := messageJSON.SurveyPeriods[0].Survey
-		period := messageJSON.SurveyPeriods[0].Period
-		filename := saveToS3(cdbExport, &wg, survey, snapshotID, period)
-		go sendToSqs(snapshotID, filename)
+		go saveToS3(cdbExport, &wg, survey, snapshotID, period)
 		wg.Wait()
+		var bucketFilenamePrefix = "snapshot-"
+		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "")
+		sendToSqs(snapshotID, filename)
 	}
 }
 
