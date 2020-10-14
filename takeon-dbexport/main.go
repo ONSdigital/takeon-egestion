@@ -81,9 +81,10 @@ func callGraphqlEndpoint(cdbExport chan string, message string) {
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	//response, err := http.Get(gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	fmt.Printf("Response from Business Layer: %s", response.Body)
+	//fmt.Printf("Response from Business Layer: %s", response.Body)
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
+		// sendtosqs
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport <- string(data)
@@ -108,7 +109,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, s
 	uploader := s3manager.NewUploader(sess)
 
 	bucket := os.Getenv("S3_BUCKET")
-	filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "")
+	filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
 	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
