@@ -28,7 +28,7 @@ type SurveyPeriods struct {
 
 // InputJSON contains snapshot_id and array of surveyperiod combinations
 type InputJSON struct {
-	SnapshotID    string
+	SnapshotID    string `json:"snapshot_id"`
 	SurveyPeriods []SurveyPeriods
 }
 
@@ -70,7 +70,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 
 		go saveToS3(cdbExport, &wg, survey, snapshotID, period)
 		var bucketFilenamePrefix = "snapshot-"
-		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "")
+		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
 		sendToSqs(snapshotID, filename)
 		wg.Wait()
 	}
