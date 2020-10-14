@@ -53,20 +53,22 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 		queueMessage := message.Body
-		cdbExport := make(chan string)
-		go callGraphqlEndpoint(cdbExport, queueMessage)
-		var wg sync.WaitGroup
-		wg.Add(1)
 		messageDetails := []byte(queueMessage)
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
 		if parseError != nil {
 			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
 		}
+
+		cdbExport := make(chan string)
+		go callGraphqlEndpoint(cdbExport, queueMessage)
+		var wg sync.WaitGroup
+		wg.Add(1)
+
 		snapshotID := messageJSON.SnapshotID
 		survey := messageJSON.SurveyPeriods[0].Survey
 		filename := saveToS3(cdbExport, &wg, survey, snapshotID)
-		go sendToSqs(snapshotID, filename)
+		sendToSqs(snapshotID, filename)
 		wg.Wait()
 	}
 }
