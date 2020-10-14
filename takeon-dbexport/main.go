@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -60,16 +61,16 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		}
 
 		cdbExport := make(chan string)
-		callGraphqlEndpoint(cdbExport, queueMessage)
-		// var wg sync.WaitGroup
-		// wg.Add(1)
+		go callGraphqlEndpoint(cdbExport, queueMessage)
+		var wg sync.WaitGroup
+		wg.Add(1)
 
 		snapshotID := messageJSON.SnapshotID
 		survey := messageJSON.SurveyPeriods[0].Survey
 		period := messageJSON.SurveyPeriods[0].Period
-		filename := saveToS3(cdbExport, survey, snapshotID, period)
-		sendToSqs(snapshotID, filename)
-		// wg.Wait()
+		filename := saveToS3(cdbExport, &wg, survey, snapshotID, period)
+		go sendToSqs(snapshotID, filename)
+		wg.Wait()
 	}
 }
 
@@ -87,7 +88,7 @@ func callGraphqlEndpoint(cdbExport chan string, message string) {
 	}
 }
 
-func saveToS3(cdbExport chan string, survey string, snapshotID string, period string) string {
+func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string, period string) string {
 
 	dbExport := <-cdbExport
 	var bucketFilenamePrefix = "snapshot-"
@@ -120,7 +121,7 @@ func saveToS3(cdbExport chan string, survey string, snapshotID string, period st
 	}
 
 	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
-	//waitGroup.Done()
+	waitGroup.Done()
 	return filename
 
 }
