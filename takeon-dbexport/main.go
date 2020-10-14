@@ -69,9 +69,9 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		period := messageJSON.SurveyPeriods[0].Period
 
 		go saveToS3(cdbExport, &wg, survey, snapshotID, period)
-		// var bucketFilenamePrefix = "snapshot-"
-		// filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		// go sendToSqs(snapshotID, filename, &wg)
+		var bucketFilenamePrefix = "snapshot-"
+		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
+		go sendToSqs(snapshotID, filename, &wg)
 		wg.Wait()
 	}
 }
@@ -129,7 +129,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, s
 
 }
 
-func sendToSqs(snapshotid string, filename string) {
+func sendToSqs(snapshotid string, filename string, waitGroup *sync.WaitGroup) {
 
 	queue := aws.String(os.Getenv("DB_EXPORT_OUTPUT_QUEUE"))
 
