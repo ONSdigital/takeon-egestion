@@ -70,14 +70,10 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		period := messageJSON.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		//cdbExport := make(chan string)
 
 		data := callGraphqlEndpoint(queueMessage, snapshotID, filename)
-		// var wg sync.WaitGroup
-		// wg.Add(1)
 
 		saveToS3(data, survey, snapshotID, period, filename)
-		// wg.Wait()
 	}
 	return nil
 }
@@ -86,7 +82,8 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) str
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	fmt.Printf("Response from Business Layer: %s", response.Body)
+	fmt.Println("Message sending over to BL: ", message)
+	fmt.Println("Message sending over to BL: ", strings.NewReader(message))
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 		sendToSqs(snapshotID, "null", false)
@@ -102,8 +99,6 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) str
 }
 
 func saveToS3(dbExport string, survey string, snapshotID string, period string, filename string) {
-
-	//dbExport := <-cdbExport
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
