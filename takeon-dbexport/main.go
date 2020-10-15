@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -45,8 +46,12 @@ func main() {
 
 }
 
-func handle(ctx context.Context, sqsEvent events.SQSEvent) {
+func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	fmt.Println("Starting the application...")
+
+	if len(sqsEvent.Records) == 0 {
+		return errors.New("No SQS message passed to function")
+	}
 
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
@@ -58,6 +63,9 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
 		}
 		snapshotID := messageJSON.SnapshotID
+		if len(messageJSON.SurveyPeriods) == 0 {
+			return errors.New("No Survey/period combinations given in message")
+		}
 		survey := messageJSON.SurveyPeriods[0].Survey
 		period := messageJSON.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
@@ -71,6 +79,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		go saveToS3(cdbExport, &wg, survey, snapshotID, period, filename)
 		wg.Wait()
 	}
+	return nil
 }
 
 func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID string, filename string) {
@@ -153,7 +162,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	DataToSend, err := json.Marshal(outputMessage)
 	if err != nil {
-		fmt.Printf("An error occured while marshaling DatToSend: %s", err)
+		fmt.Printf("An error occured while marshaling DataToSend: %s", err)
 	}
 	fmt.Printf("DataToSend %v\n", string(DataToSend))
 
