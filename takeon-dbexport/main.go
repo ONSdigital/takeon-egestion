@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -71,19 +70,19 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		period := messageJSON.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		cdbExport := make(chan string)
+		//cdbExport := make(chan string)
 
-		go callGraphqlEndpoint(cdbExport, queueMessage, snapshotID, filename)
-		var wg sync.WaitGroup
-		wg.Add(1)
+		data := callGraphqlEndpoint(queueMessage, snapshotID, filename)
+		// var wg sync.WaitGroup
+		// wg.Add(1)
 
-		go saveToS3(cdbExport, &wg, survey, snapshotID, period, filename)
-		wg.Wait()
+		saveToS3(data, survey, snapshotID, period, filename)
+		// wg.Wait()
 	}
 	return nil
 }
 
-func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID string, filename string) {
+func callGraphqlEndpoint(message string, snapshotID string, filename string) string {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
@@ -93,16 +92,18 @@ func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID strin
 		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
-		cdbExport <- string(data)
+		cdbExport := string(data)
 		fmt.Println("Accessing Graphql Endpoint done")
 		fmt.Println("Data from BL: ", cdbExport)
 		sendToSqs(snapshotID, filename, true)
+		return cdbExport
 	}
+	return ""
 }
 
-func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string, period string, filename string) {
+func saveToS3(dbExport string, survey string, snapshotID string, period string, filename string) {
 
-	dbExport := <-cdbExport
+	//dbExport := <-cdbExport
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
@@ -129,7 +130,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, s
 	}
 
 	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
-	waitGroup.Done()
+	//waitGroup.Done()
 
 }
 
