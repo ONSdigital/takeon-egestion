@@ -95,6 +95,7 @@ func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID strin
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport <- string(data)
 		fmt.Println("Accessing Graphql Endpoint done")
+		fmt.Println("Data from BL: ", cdbExport)
 		sendToSqs(snapshotID, filename, true)
 	}
 }
@@ -177,3 +178,15 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	}
 
 }
+
+// func validateMessage(messageJSON InputJSON) (InputJSON, error) {
+// 	if messageJSON.SnapshotID == "" {
+// 		sendToSqs("", "null", false)
+// 		return messageJSON, errors.New("No SnapshotID given in message")
+// 	} else if len(messageJSON.SurveyPeriods) == 0 && messageJSON.SnapshotID != "" {
+// 		sendToSqs(messageJSON.SnapshotID, "null", false)
+// 		return messageJSON, errors.New("No SnapshotID given in message")
+// 	}
+// 	return messageJSON, error
+
+// }
