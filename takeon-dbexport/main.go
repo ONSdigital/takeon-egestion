@@ -48,8 +48,6 @@ func main() {
 func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	fmt.Println("Starting the application...")
 
-	//fmt.Println("Event: ", sqsEvent.Records)
-
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 		queueMessage := message.Body
@@ -67,37 +65,34 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		snapshotID := messageJSON.SnapshotID
 		survey := messageJSON.SurveyPeriods[0].Survey
 		period := messageJSON.SurveyPeriods[0].Period
-
-		go saveToS3(cdbExport, &wg, survey, snapshotID, period)
-		var bucketFilenamePrefix = "snapshot-"
+		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		sendToSqs(snapshotID, filename)
+
+		go saveToS3(cdbExport, &wg, survey, snapshotID, period, filename)
+		//sendToSqs(snapshotID, filename)
 		wg.Wait()
 	}
 }
 
-func callGraphqlEndpoint(cdbExport chan string, message string) {
+func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID string, filename string) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
-	//response, err := http.Get(gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
 	fmt.Printf("Response from Business Layer: %s", response.Body)
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
-		// sendtosqs
+		sendToSqs(snapshotID, filename, false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport <- string(data)
 		fmt.Println("Accessing Graphql Endpoint done")
+		sendToSqs(snapshotID, filename, true)
 	}
 }
 
-func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string, period string) {
+func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string, period string, filename string) {
 
 	dbExport := <-cdbExport
-	var bucketFilenamePrefix = "snapshot"
-
-	//currentTime := time.Now().Format("2006-01-02-15:04:05")
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
@@ -109,7 +104,6 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, s
 	uploader := s3manager.NewUploader(sess)
 
 	bucket := os.Getenv("S3_BUCKET")
-	filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
 	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
@@ -129,7 +123,7 @@ func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, s
 
 }
 
-func sendToSqs(snapshotid string, filename string) {
+func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	queue := aws.String(os.Getenv("DB_EXPORT_OUTPUT_QUEUE"))
 
@@ -155,7 +149,7 @@ func sendToSqs(snapshotid string, filename string) {
 	outputMessage := &OutputMessage{
 		SnapshotID: snapshotid,
 		Location:   filename,
-		Successful: true,
+		Successful: successful,
 	}
 
 	DataToSend, err := json.Marshal(outputMessage)
