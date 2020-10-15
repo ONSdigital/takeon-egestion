@@ -61,15 +61,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if parseError != nil {
 			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
 		}
-		// if messageJSON.SnapshotID == "" {
-		// 	sendToSqs("null", "null", false)
-		// 	return errors.New("No Snapshot ID given in message")
-		// }
-		// snapshotID := messageJSON.SnapshotID
-		// if len(messageJSON.SurveyPeriods) == 0 {
-		// 	sendToSqs(snapshotID, "null", false)
-		// 	return errors.New("No Survey/period combinations given in message")
-		// }
 		inputMessage, validateError := validateInputMessage(messageJSON)
 		if validateError != nil {
 			return errors.New("Error with message from input queue")
@@ -79,13 +70,13 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		data := callGraphqlEndpoint(queueMessage, snapshotID, filename)
+		data, _ := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		saveToS3(data, survey, snapshotID, period, filename)
 	}
 	return nil
 }
 
-func callGraphqlEndpoint(message string, snapshotID string, filename string) string {
+func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
@@ -96,12 +87,15 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) str
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
+		if strings.Contains(cdbExport, "Error loading data for db Export") {
+			return "", errors.New("Error with Business Layer")
+		}
 		fmt.Println("Accessing Graphql Endpoint done")
 		fmt.Println("Data from BL: ", cdbExport)
 		sendToSqs(snapshotID, filename, true)
-		return cdbExport
+		return cdbExport, nil
 	}
-	return ""
+	return "", nil
 }
 
 func saveToS3(dbExport string, survey string, snapshotID string, period string, filename string) {
