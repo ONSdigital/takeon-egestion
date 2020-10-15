@@ -64,6 +64,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		snapshotID := messageJSON.SnapshotID
 		if len(messageJSON.SurveyPeriods) == 0 {
+			sendToSqs(snapshotID, "null", false)
 			return errors.New("No Survey/period combinations given in message")
 		}
 		survey := messageJSON.SurveyPeriods[0].Survey
@@ -89,7 +90,7 @@ func callGraphqlEndpoint(cdbExport chan string, message string, snapshotID strin
 	fmt.Printf("Response from Business Layer: %s", response.Body)
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
-		sendToSqs(snapshotID, filename, false)
+		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport <- string(data)
