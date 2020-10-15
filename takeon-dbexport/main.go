@@ -95,7 +95,7 @@ func callGraphqlEndpoint(cdbExport chan string, message string) {
 func saveToS3(cdbExport chan string, waitGroup *sync.WaitGroup, survey string, snapshotID string, period string) {
 
 	dbExport := <-cdbExport
-	var bucketFilenamePrefix = "snapshot-"
+	var bucketFilenamePrefix = "snapshot"
 
 	//currentTime := time.Now().Format("2006-01-02-15:04:05")
 
