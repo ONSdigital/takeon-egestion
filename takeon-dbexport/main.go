@@ -51,11 +51,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 	for _, message := range sqsEvent.Records {
 		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
 		queueMessage := message.Body
-		cdbExport := make(chan string)
-		go callGraphqlEndpoint(cdbExport, queueMessage)
-		var wg sync.WaitGroup
-		wg.Add(1)
-
 		messageDetails := []byte(queueMessage)
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
@@ -67,9 +62,13 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) {
 		period := messageJSON.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
+		cdbExport := make(chan string)
+
+		go callGraphqlEndpoint(cdbExport, queueMessage, snapshotID, filename)
+		var wg sync.WaitGroup
+		wg.Add(1)
 
 		go saveToS3(cdbExport, &wg, survey, snapshotID, period, filename)
-		//sendToSqs(snapshotID, filename)
 		wg.Wait()
 	}
 }
