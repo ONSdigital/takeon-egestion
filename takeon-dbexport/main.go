@@ -70,7 +70,10 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
-		data, _ := callGraphqlEndpoint(queueMessage, snapshotID, filename)
+		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
+		if dataError != nil {
+			return errors.New("Problem with call to Business Layer")
+		}
 		saveToS3(data, survey, snapshotID, period, filename)
 	}
 	return nil
