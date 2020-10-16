@@ -87,6 +87,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
+		fmt.Println("Data from BL: " + cdbExport)
 		if strings.Contains(cdbExport, "Error loading data for db Export") {
 			return "", errors.New("Error with Business Layer")
 		}
