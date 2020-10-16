@@ -22,8 +22,8 @@ var region = os.Getenv("AWS_REGION")
 
 // SurveyPeriods arrays in JSON message
 type SurveyPeriods struct {
-	Survey string
-	Period string
+	Survey string `json:"survey"`
+	Period string `json:"period"`
 }
 
 // InputJSON contains snapshot_id and array of surveyperiod combinations
