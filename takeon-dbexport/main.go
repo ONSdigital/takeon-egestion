@@ -72,6 +72,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
+			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
 		saveToS3(data, survey, snapshotID, period, filename)
