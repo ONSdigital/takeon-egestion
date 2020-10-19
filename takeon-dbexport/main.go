@@ -29,7 +29,7 @@ type SurveyPeriods struct {
 // InputJSON contains snapshot_id and array of surveyperiod combinations
 type InputJSON struct {
 	SnapshotID    string `json:"snapshot_id"`
-	SurveyPeriods []SurveyPeriods
+	SurveyPeriods []SurveyPeriods `json:"surveyperiods"`
 }
 
 // OutputMessage to send to export-output queue
