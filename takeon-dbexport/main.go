@@ -84,20 +84,17 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
 	fmt.Println("Message sending over to BL: ", message)
-	// dataFromBL, _ := ioutil.ReadAll(response.Body)
-	// fmt.Println("Data from BL: " + string(dataFromBL))
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
-		fmt.Println("Data from BL inside else: " + cdbExport)
+		fmt.Println("Data from BL after successful call: " + cdbExport)
 		if strings.Contains(cdbExport, "Error loading data for db Export") {
 			return "", errors.New("Error with Business Layer")
 		}
 		fmt.Println("Accessing Graphql Endpoint done")
-		fmt.Println("Data from BL: ", cdbExport)
 		sendToSqs(snapshotID, filename, true)
 		return cdbExport, nil
 	}
