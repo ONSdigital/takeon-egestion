@@ -26,22 +26,6 @@ func TestInputMessageReturnsExpected(t *testing.T) {
 	}
 }
 
-// func TestEmptyArrayReturnsExpectedError(t *testing.T) {
-// 	var invalidTest InputJSON
-// 	json.Unmarshal(emptyArrayJSONMessage, &invalidTest)
-// 	ExpectedError := "No Survey/period combinations given in message"
-// 	var _, error = validateInputMessage(invalidTest)
-// 	assert.EqualValues(t, ExpectedError, error)
-// }
-
-// func TestEmptySnapshotIDReturnsExpectedError(t *testing.T) {
-// 	var invalidTest InputJSON
-// 	json.Unmarshal(emptyArrayJSONMessage, &invalidTest)
-// 	ExpectedError := "No SnapshotID given in message"
-// 	var _, error = validateInputMessage(invalidTest)
-// 	assert.EqualValues(t, ExpectedError, error)
-// }
-
 var validJSONMessage = []byte(`
 {
 	"snapshot_id": "14e0fb27-d450-44d4-8452-9f6996b00e27",
@@ -56,17 +40,3 @@ var validJSONMessage = []byte(`
 	  }
 	]
   }`)
-
-// var emptyArrayJSONMessage = []byte(`
-//   {
-// 	  "snapshot_id": "14e0fb27-d450-44d4-8452-9f6996b00e27",
-// 	  "surveyperiods": [
-// 	  ]
-//   }`)
-
-// var emptySnapshotIDMessage = []byte(`
-//   {
-// 	  "snapshot_id": "14e0fb27-d450-44d4-8452-9f6996b00e27",
-// 	  "surveyperiods": [
-// 	  ]
-//   }`)
