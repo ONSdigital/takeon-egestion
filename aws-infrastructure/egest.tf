@@ -176,6 +176,7 @@ resource "aws_sqs_queue" "db-export-output" {
 resource "aws_lambda_event_source_mapping" "db-export-trigger" {
   event_source_arn = aws_sqs_queue.db-export-input.arn
   function_name = aws_lambda_function.export.arn
+  batch_size = 1
 }
 
 
