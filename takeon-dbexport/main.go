@@ -68,27 +68,30 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		snapshotID := inputMessage.SnapshotID
 		survey := inputMessage.SurveyPeriods[0].Survey
 
-		var lookup = {};
-		var result = [];
-
-		for (var survey, i = 0; survey = survey[i++];) {
-			var name = item.name;
-
-			if (!(name in lookup)) {
-				lookup[name] = 1;
-				result.push(name);
-			}
+		uniqueSurvey := make(map[string]bool)
+		for _, item := range survey {
+				if _, ok := uniqueSurvey[item]; ok {
+						fmt.Println(item, "is a duplicate")
+				} else {
+					uniqueSurvey[item] = true
+				}
 		}
+	
+		var resultSurvey []string
+		for item, _ := range uniqueSurvey {
+			resultSurvey = append(resultSurvey, item)
+		}
+		return resultSurvey
 
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
-		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
+		filename := strings.Join([]string{bucketFilenamePrefix, resultSurvey, period, snapshotID}, "-")
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
-		saveToS3(data, survey, snapshotID, period, filename)
+		saveToS3(data, resultSurvey, snapshotID, period, filename)
 	}
 	return nil
 }
