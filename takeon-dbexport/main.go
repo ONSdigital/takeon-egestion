@@ -79,7 +79,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	
 		var resultSurvey []string
 		for item, _ := range uniqueSurvey {
-			resultSurvey = append(resultSurvey, item)
+			resultSurvey = append(resultSurvey, item...)
 		}
 		return resultSurvey
 
