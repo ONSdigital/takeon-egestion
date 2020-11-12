@@ -66,7 +66,9 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return errors.New("Error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
-		survey := inputMessage.SurveyPeriods[0].Survey
+		for survey := range(inputMessage.SurveyPeriods[0].Survey){
+			fmt.Printf("unique Survey", survey)
+		}
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
