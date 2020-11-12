@@ -68,7 +68,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		snapshotID := inputMessage.SnapshotID
 		survey := inputMessage.SurveyPeriods[0].Survey
 
-		uniqueSurvey := make(map[Key]bool)
+		uniqueSurvey := make(map[string]bool)
 		for _, item := range survey {
 				if _, ok := uniqueSurvey[item]; ok {
 						fmt.Println(item, "is a duplicate")
