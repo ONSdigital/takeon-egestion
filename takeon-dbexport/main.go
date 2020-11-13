@@ -72,7 +72,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			//fmt.Printf("%s", item.Survey)
 			uniqueSurvey = append(uniqueSurvey, item.Survey)
 		}
-
+		return uniqueSurvey
 		fmt.Println(uniqueSurvey)
 		keys := make(map[string]bool)
 		list := []string{}
@@ -82,6 +82,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 				list = append(list, entry)
 			}
 		}
+		return list
 		fmt.Println(list)
 		
 		period := inputMessage.SurveyPeriods[0].Period
