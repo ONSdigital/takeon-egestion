@@ -79,7 +79,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		for _, entry := range survey {
 			if _, value := keys[entry]; !value {
 				keys[entry] = true
-				uniqueList = append(uniqueList, entry)
+				uniqueList = append(uniqueList, entry...)
 			}
 		}
         fmt.Println(uniqueList)
