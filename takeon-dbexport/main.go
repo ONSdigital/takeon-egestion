@@ -69,12 +69,14 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		survey := inputMessage.SurveyPeriods[0].Survey
 
 		uniqueSurvey := make(map[string]bool)
-		for _, item := range survey {
-				if _, ok := uniqueSurvey[item]; ok {
-						fmt.Println(item, "is a duplicate")
-				} else {
-					uniqueSurvey[item] = true
-				}
+		for i, item := range survey {
+			fmt.Printf(i, item)
+			
+				// if _, ok := uniqueSurvey[item]; ok {
+				// 		fmt.Println(item, "is a duplicate")
+				// } else {
+				// 	uniqueSurvey[item] = true
+				// }
 		}
 	
 		var resultSurvey []string
