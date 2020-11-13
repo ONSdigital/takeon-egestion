@@ -67,40 +67,34 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		snapshotID := inputMessage.SnapshotID
 		survey := inputMessage.SurveyPeriods[0].Survey
-		singleSurvey := uniqueSurvey(survey)
-		fmt.Println(singleSurvey)
+		
+		for _, item := range messageJSON.SurveyPeriods {
+			//fmt.Printf("%s", item.Survey)
+			a = append(a, item.Survey)
+		}
+		fmt.Println(a)
+		keys := make(map[string]bool)
+		list := []string{}
+		for _, entry := range a {
+		if _, value := keys[entry]; !value {
+		keys[entry] = true
+		list = append(list, entry)
+		}
+		}
+		fmt.Println(list)
+		
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
-		filename := strings.Join([]string{bucketFilenamePrefix, singleSurvey, period, snapshotID}, "-")
+		filename := strings.Join([]string{bucketFilenamePrefix, list, period, snapshotID}, "-")
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
-		saveToS3(data, singleSurvey, snapshotID, period, filename)
+		saveToS3(data, list, snapshotID, period, filename)
 	}
 	return nil
 }
-
-
-func uniqueSurvey([]string)[]string{
-	for _, item := range survey {
-		//fmt.Printf("%s", item.Survey)
-		a = append(a, item.Survey)
-	  }
-	  fmt.Println(a)
-	  keys := make(map[string]bool)
-	  list := []string{}
-	  for _, entry := range a {
-		if _, value := keys[entry]; !value {
-		keys[entry] = true
-		list = append(list, entry)
-		}
-	  }
-	  fmt.Println(list)
-	  return list
-}
-
 
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
