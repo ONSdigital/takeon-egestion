@@ -67,6 +67,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		snapshotID := inputMessage.SnapshotID
 		survey := inputMessage.SurveyPeriods[0].Survey
+		fmt.Printf(survey)
 
 		uniqueSurvey := make(map[string]bool)
 		for i, item := range survey {
