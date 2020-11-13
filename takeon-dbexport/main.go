@@ -70,10 +70,10 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		
 		for _, item := range messageJSON.SurveyPeriods {
 			//fmt.Printf("%s", item.Survey)
-			uniqueSurvey = append(a, item.Survey)
+			uniqueSurvey = append(uniqueSurvey, item.Survey)
 		}
 
-		fmt.Println(a)
+		fmt.Println(uniqueSurvey)
 		keys := make(map[string]bool)
 		list := []string{}
 		for _, entry := range uniqueSurvey {
