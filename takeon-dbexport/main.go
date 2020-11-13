@@ -70,30 +70,30 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		
 		for _, item := range messageJSON.SurveyPeriods {
 			//fmt.Printf("%s", item.Survey)
-			survey = append(survey, item.Survey)
+			uniqueSurvey = append(uniqueSurvey, item.Survey)
 		}
 		
-		fmt.Println(survey)
+		fmt.Println(uniqueSurvey)
 		keys := make(map[string]bool)
 		list := []string{}
-		for _, entry := range survey {
+		for _, entry := range uniqueSurvey {
 			if _, value := keys[entry]; !value {
 				keys[entry] = true
 				list = append(list, entry)
 			}
 		}
-		return list
+		
 		fmt.Println(list)
 		
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
-		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
+		filename := strings.Join([]string{bucketFilenamePrefix, list, period, snapshotID}, "-")
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
-		saveToS3(data, survey, snapshotID, period, filename)
+		saveToS3(data, list, snapshotID, period, filename)
 	}
 	return nil
 }
