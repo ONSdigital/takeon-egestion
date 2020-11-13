@@ -66,20 +66,21 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return errors.New("Error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
-		survey := inputMessage.SurveyPeriods[0].Survey
+		// survey := inputMessage.SurveyPeriods[0].Survey
 		
 		for _, item := range messageJSON.SurveyPeriods {
 			//fmt.Printf("%s", item.Survey)
-			a = append(a, item.Survey)
+			uniqueSurvey = append(a, item.Survey)
 		}
+
 		fmt.Println(a)
 		keys := make(map[string]bool)
 		list := []string{}
-		for _, entry := range a {
-		if _, value := keys[entry]; !value {
-		keys[entry] = true
-		list = append(list, entry)
-		}
+		for _, entry := range uniqueSurvey {
+			if _, value := keys[entry]; !value {
+				keys[entry] = true
+				list = append(list, entry)
+			}
 		}
 		fmt.Println(list)
 		
