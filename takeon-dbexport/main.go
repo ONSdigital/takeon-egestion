@@ -68,6 +68,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		snapshotID := inputMessage.SnapshotID
 		survey := inputMessage.SurveyPeriods[0].Survey
 		singleSurvey := uniqueSurvey(survey)
+		fmt.Println(singleSurvey)
 		period := inputMessage.SurveyPeriods[0].Period
 		var bucketFilenamePrefix = "snapshot"
 		filename := strings.Join([]string{bucketFilenamePrefix, singleSurvey, period, snapshotID}, "-")
@@ -83,22 +84,21 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 
 func uniqueSurvey([]string)[]string{
-		uniqueSurvey := make(map[string]bool)
-		for i, item := range survey {
-		fmt.Printf(i, item)
-			
-		if _, ok := uniqueSurvey[item]; ok {
-		 		fmt.Println(item, "is a duplicate")
-		} else {
-		 	uniqueSurvey[item] = true
+	for _, item := range survey {
+		//fmt.Printf("%s", item.Survey)
+		a = append(a, item.Survey)
+	  }
+	  fmt.Println(a)
+	  keys := make(map[string]bool)
+	  list := []string{}
+	  for _, entry := range a {
+		if _, value := keys[entry]; !value {
+		keys[entry] = true
+		list = append(list, entry)
 		}
-		}
-	
-		var resultSurvey []string
-		for item, _ := range uniqueSurvey {
-		resultSurvey = append(resultSurvey, item)
-		}
-		return resultSurvey
+	  }
+	  fmt.Println(list)
+	  return list
 }
 
 
