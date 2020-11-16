@@ -66,29 +66,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return errors.New("Error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
-		// survey := inputMessage.SurveyPeriods[0].Survey
-		// period := inputMessage.SurveyPeriods[0].Period
-
-		// var surveyPeriods = ""
-		// for _, item := range messageJSON.SurveyPeriods {
-		// 	//fmt.Printf("%s", item.Survey)
-		// 	surveyPeriods = surveyPeriods + item.Survey + item.Period
-		// }
-		// fmt.Println(surveyPeriods)
-
-		// keys := make(map[string]bool)
-		// uniqueList := []string{}
-		// for _, entry := range survey {
-		// 	if _, value := keys[entry]; !value {
-		// 		keys[entry] = true
-		// 		uniqueList = append(uniqueList, entry)
-		// 	}
-		// }
-		// fmt.Println(uniqueList)
-
-		// var bucketFilenamePrefix = "snapshot"
-		// filename := strings.Join([]string{bucketFilenamePrefix, surveyPeriods, snapshotID}, "-")
-
 		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
 		if err == nil {
 			return err

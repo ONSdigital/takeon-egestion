@@ -56,25 +56,25 @@ func TestGetFileName_GivenMultipleSurveyPeriod_OutputCorrectFileName(t *testing.
 }
 
 
-func TestGetFileName_GivenBlankeSurveyPeriod_OutputError(t *testing.T){
-	var snapshotID = "fwwekfnsdn"
-	var singleSurveyPeriod = []SurveyPeriods {}
-	var actual, err = getFileName(snapshotID, singleSurveyPeriod)
+// func TestGetFileName_GivenBlankeSurveyPeriod_OutputError(t *testing.T){
+// 	var snapshotID = "fwwekfnsdn"
+// 	var singleSurveyPeriod = []SurveyPeriods {}
+// 	var actual, err = getFileName(snapshotID, singleSurveyPeriod)
 
-	assert.EqualValues(t, "", actual)
+// 	assert.EqualValues(t, "", actual)
 
-	assert.Error(t, err)
-}
+// 	assert.Error(t, err)
+// }
 
 
-func TestGetFileName_GivenNullSurveyPeriod_OutputError(t *testing.T){
-	var snapshotID = "fwwekfnsdn"
-	var actual, err = getFileName(snapshotID, nil)
+// func TestGetFileName_GivenNullSurveyPeriod_OutputError(t *testing.T){
+// 	var snapshotID = "fwwekfnsdn"
+// 	var actual, err = getFileName(snapshotID, nil)
 
-	assert.EqualValues(t, "", actual)
+// 	assert.EqualValues(t, "", actual)
 
-	assert.Error(t, err)
-}
+// 	assert.Error(t, err)
+// }
 
 var validJSONMessage = []byte(`
 {
