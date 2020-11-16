@@ -66,35 +66,60 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return errors.New("Error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
-		survey := inputMessage.SurveyPeriods[0].Survey
-		
-		var surveyList []string
-        for _, item := range messageJSON.SurveyPeriods {
-			//fmt.Printf("%s", item.Survey)
-			surveyList = append(surveyList, item.Survey)
+		// survey := inputMessage.SurveyPeriods[0].Survey
+		// period := inputMessage.SurveyPeriods[0].Period
+
+		// var surveyPeriods = ""
+		// for _, item := range messageJSON.SurveyPeriods {
+		// 	//fmt.Printf("%s", item.Survey)
+		// 	surveyPeriods = surveyPeriods + item.Survey + item.Period
+		// }
+		// fmt.Println(surveyPeriods)
+
+		// keys := make(map[string]bool)
+		// uniqueList := []string{}
+		// for _, entry := range survey {
+		// 	if _, value := keys[entry]; !value {
+		// 		keys[entry] = true
+		// 		uniqueList = append(uniqueList, entry)
+		// 	}
+		// }
+		// fmt.Println(uniqueList)
+
+		// var bucketFilenamePrefix = "snapshot"
+		// filename := strings.Join([]string{bucketFilenamePrefix, surveyPeriods, snapshotID}, "-")
+
+		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
+		if err == nil {
+			return err
 		}
-		fmt.Println(surveyList)
-		keys := make(map[string]bool)
-		uniqueList := []string{}
-		for _, entry := range survey {
-			if _, value := keys[entry]; !value {
-				keys[entry] = true
-				uniqueList = append(uniqueList, entry)
-			}
-		}
-        fmt.Println(uniqueList)
 		
-		period := inputMessage.SurveyPeriods[0].Period
-		var bucketFilenamePrefix = "snapshot"
-		filename := strings.Join([]string{bucketFilenamePrefix, uniqueList, period, snapshotID}, "-")
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
-		saveToS3(data, uniqueList, snapshotID, period, filename)
+		saveToS3(data, filename)
 	}
 	return nil
+}
+
+
+func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
+
+	var combinedSurveyPeriods = ""
+	var join = ""
+	for _, item := range surveyPeriods {
+		//fmt.Printf("%s", item.Survey)
+		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
+		join = "-"
+	}
+	fmt.Println(combinedSurveyPeriods)
+
+	var bucketFilenamePrefix = "snapshot"
+	var filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
+
+	return filename, nil
 }
 
 
@@ -120,7 +145,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	return "", nil
 }
 
-func saveToS3(dbExport string, survey string, snapshotID string, period string, filename string) {
+func saveToS3(dbExport string, filename string) {
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
