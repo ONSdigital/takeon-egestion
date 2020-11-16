@@ -70,7 +70,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if err == nil {
 			return err
 		}
-		
+		fmt.Println(filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
@@ -91,7 +91,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
 		join = "-"
 	}
-	fmt.Println(combinedSurveyPeriods)
 
 	var bucketFilenamePrefix = "snapshot"
 	var filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
