@@ -67,7 +67,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 		snapshotID := inputMessage.SnapshotID
 		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
-		if err == nil {
+		if err != nil {
 			return err
 		}
 		fmt.Printf("file name: %s", filename)
