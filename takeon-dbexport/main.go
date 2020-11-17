@@ -70,7 +70,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("file name: %s", filename)
+		fmt.Println("file name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
