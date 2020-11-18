@@ -59,7 +59,8 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
 		if parseError != nil {
-			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
+			sendToSqs("", "null", false)
+			return errors.New("Error with JSON from input queue" + parseError.Error())
 		}
 		inputMessage, validateError := validateInputMessage(messageJSON)
 		if validateError != nil {
@@ -81,7 +82,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
-
 func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
 	var combinedSurveyPeriods = ""
 	var join = ""
@@ -101,7 +101,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	}
 	return filename, nil
 }
-
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
