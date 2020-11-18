@@ -91,14 +91,13 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 		if len(surveyPeriods) > 0 {
 			combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
 			join = "-"
-		} 
-		if len(surveyPeriods) == 0 { 
-			return filename, nil
+		}else {
+			return filename, errors.New("Survey Period Invalid")
 		}
 		var bucketFilenamePrefix = "snapshot"
 		filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
 	}
-	return filename, nil
+	return filename, errors.New("Unable to generate file name")
 }
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
