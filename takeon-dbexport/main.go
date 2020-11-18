@@ -59,7 +59,8 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
 		if parseError != nil {
-			return errors.New("Error with JSON from input queue")
+			sendToSqs("", "null", false)
+			return errors.New("Error with JSON from input queue" + parseError.Error())
 		}
 		inputMessage, validateError := validateInputMessage(messageJSON)
 		if validateError != nil {
