@@ -93,7 +93,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 			join = "-"
 		} 
 		if len(surveyPeriods) == 0 { 
-			var filename = ""
 			return filename, nil
 		}
 		var bucketFilenamePrefix = "snapshot"
