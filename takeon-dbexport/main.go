@@ -85,12 +85,20 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
 	var combinedSurveyPeriods = ""
 	var join = ""
+	var filename = ""
+
 	for _, item := range surveyPeriods {
-		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
-		join = "-"
+		if len(surveyPeriods) > 0 {
+			combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
+			join = "-"
+		} 
+		if len(surveyPeriods) == 0 { 
+			var filename = ""
+			return filename, nil
+		}
+		var bucketFilenamePrefix = "snapshot"
+		filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
 	}
-	var bucketFilenamePrefix = "snapshot"
-	var filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
 	return filename, nil
 }
 
