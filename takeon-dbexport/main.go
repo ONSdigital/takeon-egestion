@@ -82,23 +82,24 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
+
 func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
 	var combinedSurveyPeriods = ""
 	var join = ""
 	var filename = ""
 
-	for _, item := range surveyPeriods {
-		if len(surveyPeriods) > 0 {
+	if len(surveyPeriods) > 0 {
+		for _, item := range surveyPeriods {
 			combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
 			join = "-"
-		}else {
-			return filename, errors.New("Survey Period Invalid")
 		}
 		var bucketFilenamePrefix = "snapshot"
 		filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
-	}
-	return filename, errors.New("Unable to generate file name")
+		return filename, nil
+	} 
+	return filename, errors.New("Survey Period Invalid")
 }
+
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
