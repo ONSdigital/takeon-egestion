@@ -88,16 +88,17 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	var join = ""
 	var filename = ""
 
-	if len(surveyPeriods) > 0 {
-		for _, item := range surveyPeriods {
-			combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
-			join = "-"
-		}
-		var bucketFilenamePrefix = "snapshot"
-		filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
-		return filename, nil
-	} 
-	return filename, errors.New("Survey Period Invalid")
+	if len(surveyPeriods) == 0 {
+		return filename, errors.New("Survey Period Invalid")
+	}
+	for _, item := range surveyPeriods {
+		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
+		join = "-"
+	}
+	var bucketFilenamePrefix = "snapshot"
+	filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
+	fmt.Println("Filename: ", filename)
+	return filename, nil
 }
 
 
