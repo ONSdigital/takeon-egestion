@@ -59,26 +59,47 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
 		if parseError != nil {
-			fmt.Printf("Error with JSON from db-export-input queue: %v", parseError)
+			sendToSqs("", "null", false)
+			return errors.New("Error with JSON from input queue" + parseError.Error())
 		}
 		inputMessage, validateError := validateInputMessage(messageJSON)
 		if validateError != nil {
 			return errors.New("Error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
-		survey := inputMessage.SurveyPeriods[0].Survey
-		period := inputMessage.SurveyPeriods[0].Period
-		var bucketFilenamePrefix = "snapshot"
-		filename := strings.Join([]string{bucketFilenamePrefix, survey, period, snapshotID}, "-")
+		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
+		if err != nil {
+			return errors.New("Unable to create filename. Invalid Survey Period")
+		}
+		fmt.Println("File Name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
 			return errors.New("Problem with call to Business Layer")
 		}
-		saveToS3(data, survey, snapshotID, period, filename)
+		saveToS3(data, filename)
 	}
 	return nil
 }
+
+
+func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
+	var combinedSurveyPeriods = ""
+	var join = ""
+	var filename = ""
+
+	if len(surveyPeriods) == 0 {
+		return filename, errors.New("Survey Period Invalid")
+	}
+	for _, item := range surveyPeriods {
+		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
+		join = "-"
+	}
+	var bucketFilenamePrefix = "snapshot"
+	filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
+	return filename, nil
+}
+
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
@@ -102,7 +123,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	return "", nil
 }
 
-func saveToS3(dbExport string, survey string, snapshotID string, period string, filename string) {
+func saveToS3(dbExport string, filename string) {
 
 	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
