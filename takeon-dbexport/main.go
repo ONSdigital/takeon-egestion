@@ -69,9 +69,9 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		snapshotID := inputMessage.SnapshotID
 		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
 		if err != nil {
-			return err
+			return errors.New("Unable to create filename. Invalid Survey Period")
 		}
-		fmt.Println("file name: ", filename)
+		fmt.Println("File Name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
@@ -97,7 +97,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	}
 	var bucketFilenamePrefix = "snapshot"
 	filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
-	fmt.Println("Filename: ", filename)
 	return filename, nil
 }
 
