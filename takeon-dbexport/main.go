@@ -82,7 +82,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
-
 func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
 	var combinedSurveyPeriods = ""
 	var join = ""
@@ -99,7 +98,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
 	return filename, nil
 }
-
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
@@ -174,11 +172,14 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
 	}
 
+	bucket := os.Getenv("S3_BUCKET")
+	location := "s3://" + bucket + "/" + filename
+
 	queueURL := urlResult.QueueUrl
 
 	outputMessage := &OutputMessage{
 		SnapshotID: snapshotid,
-		Location:   filename,
+		Location:   location,
 		Successful: successful,
 	}
 
