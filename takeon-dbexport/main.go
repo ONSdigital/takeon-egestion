@@ -19,6 +19,7 @@ import (
 )
 
 var region = os.Getenv("AWS_REGION")
+var bucket = os.Getenv("S3_BUCKET")
 
 // SurveyPeriods arrays in JSON message
 type SurveyPeriods struct {
@@ -82,7 +83,6 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
-
 func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, error) {
 	var combinedSurveyPeriods = ""
 	var join = ""
@@ -99,7 +99,6 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	filename = strings.Join([]string{bucketFilenamePrefix, combinedSurveyPeriods, snapshotID}, "-")
 	return filename, nil
 }
-
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
@@ -134,7 +133,6 @@ func saveToS3(dbExport string, filename string) {
 
 	uploader := s3manager.NewUploader(sess)
 
-	bucket := os.Getenv("S3_BUCKET")
 	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
@@ -174,11 +172,13 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
 	}
 
+	location := "s3://" + bucket + "/" + filename
+
 	queueURL := urlResult.QueueUrl
 
 	outputMessage := &OutputMessage{
 		SnapshotID: snapshotid,
-		Location:   filename,
+		Location:   location,
 		Successful: successful,
 	}
 
