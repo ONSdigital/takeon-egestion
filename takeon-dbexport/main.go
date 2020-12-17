@@ -19,6 +19,7 @@ import (
 )
 
 var region = os.Getenv("AWS_REGION")
+var bucket = os.Getenv("S3_BUCKET")
 
 // SurveyPeriods arrays in JSON message
 type SurveyPeriods struct {
@@ -132,7 +133,6 @@ func saveToS3(dbExport string, filename string) {
 
 	uploader := s3manager.NewUploader(sess)
 
-	bucket := os.Getenv("S3_BUCKET")
 	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
@@ -172,7 +172,6 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
 	}
 
-	bucket := os.Getenv("S3_BUCKET")
 	location := "s3://" + bucket + "/" + filename
 
 	queueURL := urlResult.QueueUrl
