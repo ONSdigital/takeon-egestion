@@ -102,6 +102,10 @@ resource "aws_iam_role_policy_attachment" "sqs" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda-xray" {
+  role = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXrayFullAccess"
+}
 
 # Dummy content to provision temporary lambdas
 data "archive_file" "dummy" {
