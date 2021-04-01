@@ -130,6 +130,8 @@ resource "aws_lambda_function" "export" {
   handler = "bin/main"
   runtime = "go1.x"
   filename = data.archive_file.dummy.output_path
+  memory_size = 2048
+  timeout = 300
   vpc_config {
     subnet_ids = [data.aws_subnet.private-subnet.id, data.aws_subnet.private-subnet2.id]
     security_group_ids = [data.aws_security_group.vpc-private.id]
