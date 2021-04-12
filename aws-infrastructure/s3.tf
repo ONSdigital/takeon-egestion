@@ -3,6 +3,10 @@ resource "aws_s3_bucket" "export" {
   bucket = "${local.name_prefix}-export"
   acl    = "private"
   
+  versioning {
+    enabled = true
+  }
+
   force_destroy = true
   server_side_encryption_configuration {
     rule {
