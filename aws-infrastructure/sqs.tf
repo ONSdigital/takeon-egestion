@@ -3,6 +3,9 @@
 resource "aws_sqs_queue" "db-export-input" {
   name = "${local.name_prefix}-db-export-input"
   redrive_policy = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dlq.arn}\",\"maxReceiveCount\":3}"
+  
+  kms_master_key_id                 = "alias/aws/sqs"
+  kms_data_key_reuse_period_seconds = 300
 
   tags = merge(
     var.common_tags,
@@ -17,6 +20,9 @@ resource "aws_sqs_queue" "db-export-input" {
 resource "aws_sqs_queue" "db-export-output" {
   name = "${local.name_prefix}-db-export-output"
   redrive_policy = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dlq.arn}\",\"maxReceiveCount\":3}"
+
+  kms_master_key_id                 = "alias/aws/sqs"
+  kms_data_key_reuse_period_seconds = 300
 
   tags = merge(
     var.common_tags,
@@ -38,6 +44,9 @@ resource "aws_lambda_event_source_mapping" "db-export-trigger" {
 # Dead letter queue
 resource "aws_sqs_queue" "dlq" {
   name = "${local.name_prefix}-export-dlq"
+
+  kms_master_key_id                 = "alias/aws/sqs"
+  kms_data_key_reuse_period_seconds = 300
 
     tags = merge(
         var.common_tags,
