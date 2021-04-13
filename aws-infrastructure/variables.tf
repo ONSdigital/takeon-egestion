@@ -19,3 +19,8 @@ variable "common_tags" {
 variable "common_name_prefix" {
     default = "spp-es-takeon"
 }
+
+locals {
+  name_prefix = "${var.common_name_prefix}-egestion-${var.environment_name}"
+  vpc_prefix = "${var.common_name_prefix}-${var.environment_name}"
+}
