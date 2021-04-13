@@ -16,6 +16,7 @@ resource "aws_lambda_function" "export" {
   handler = "bin/main"
   runtime = "go1.x"
   filename = data.archive_file.dummy.output_path
+  timeout     = 300
   memory_size = 1024
 
    tracing_config {
