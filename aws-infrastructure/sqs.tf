@@ -1,9 +1,9 @@
 
 # input
 resource "aws_sqs_queue" "db-export-input" {
-  name = "${local.name_prefix}-db-export-input"
-  redrive_policy = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dlq.arn}\",\"maxReceiveCount\":3}"
-  
+  name                       = "${local.name_prefix}-db-export-input"
+  redrive_policy             = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dlq.arn}\",\"maxReceiveCount\":3}"  
+  visibility_timeout_seconds = 300
   kms_master_key_id                 = "alias/aws/sqs"
   kms_data_key_reuse_period_seconds = 300
 
@@ -18,7 +18,7 @@ resource "aws_sqs_queue" "db-export-input" {
 
 # output
 resource "aws_sqs_queue" "db-export-output" {
-  name = "${local.name_prefix}-db-export-output"
+  name           = "${local.name_prefix}-db-export-output"
   redrive_policy = "{\"deadLetterTargetArn\":\"${aws_sqs_queue.dlq.arn}\",\"maxReceiveCount\":3}"
 
   kms_master_key_id                 = "alias/aws/sqs"
