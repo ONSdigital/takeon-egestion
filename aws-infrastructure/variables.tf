@@ -6,7 +6,7 @@ variable "common_name_prefix" { default = "spp-es-takeon" }
 
 # Define the standard AWS tags
 locals {
-  name_prefix = "${var.common_name_prefix}-${var.environment_name}"
+  name_prefix = "${var.common_name_prefix}-egestion-${var.environment_name}"
   vpc_prefix  = "${var.common_name_prefix}-${var.environment_name}"
   common_tags = {
     "ons:owner:team"              = "spp-dataclearing"
