@@ -24,5 +24,5 @@ data "aws_subnet_ids" "private" {
 }
 
 data "aws_lb" "business-layer" {
-  name = "${local.vpc_prefix}-ecs-app-loadbalancer"
+  name = "${local.vpc_prefix}-ecs-app-lb"
 }
