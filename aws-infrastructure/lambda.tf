@@ -24,7 +24,7 @@ resource "aws_lambda_function" "export" {
   }
 
   vpc_config {
-    subnet_ids         = data.aws_subnet_ids.private
+    subnet_ids         = data.aws_subnet_ids.private.ids
     security_group_ids = [data.aws_security_group.vpc-private.id]
   }
 
