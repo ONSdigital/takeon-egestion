@@ -7,6 +7,14 @@ data "aws_security_group" "vpc-private" {
   }
 }
 
+data "aws_vpc" "main" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.name_prefix}-vpc"]
+  }
+}
+
+
 data "aws_subnet_ids" "private" {
   vpc_id = data.aws_vpc.main.id
   filter {

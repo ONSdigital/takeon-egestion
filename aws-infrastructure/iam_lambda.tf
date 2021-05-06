@@ -39,16 +39,16 @@ resource "aws_iam_role_policy_attachment" "lambda_invoke" {
 }
 
 resource "aws_iam_role_policy_attachment" "s3" {
-  role = aws_iam_role.lambda.name
+  role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "sqs" {
-  role = aws_iam_role.lambda.name
+  role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "lambda-xray" {
-  role = aws_iam_role.lambda.name
+  role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AWSXrayFullAccess"
 }

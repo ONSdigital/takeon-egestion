@@ -38,7 +38,7 @@ resource "aws_lambda_function" "export" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.common_tags,
     {
       Name       = "${local.name_prefix}-export",
       "ons:name" = "${local.name_prefix}-export"

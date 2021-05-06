@@ -2,7 +2,7 @@
 resource "aws_s3_bucket" "export" {
   bucket = "${local.name_prefix}-export"
   acl    = "private"
-  
+
   versioning {
     enabled = true
   }
@@ -17,22 +17,22 @@ resource "aws_s3_bucket" "export" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.common_tags,
     {
-    Name = "${local.name_prefix}-export",
-    "ons:name" = "${local.name_prefix}-export"
+      Name       = "${local.name_prefix}-export",
+      "ons:name" = "${local.name_prefix}-export"
     }
   )
 }
 
 resource "aws_s3_bucket_public_access_block" "export" {
-  bucket = aws_s3_bucket.export.id
+  bucket                  = aws_s3_bucket.export.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-  
+
 
 
 
