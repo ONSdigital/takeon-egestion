@@ -19,7 +19,7 @@ data "aws_subnet_ids" "private" {
   vpc_id = data.aws_vpc.main.id
   filter {
     name   = "tag:Name"
-    values = ["${local.name_prefix}-private*"]
+    values = ["${local.vpc_prefix}-private*"]
   }
 }
 
