@@ -10,7 +10,7 @@ data "aws_security_group" "vpc-private" {
 data "aws_vpc" "main" {
   filter {
     name   = "tag:Name"
-    values = ["${local.name_prefix}-vpc"]
+    values = ["${local.vpc_prefix}-vpc"]
   }
 }
 
