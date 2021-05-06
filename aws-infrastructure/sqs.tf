@@ -49,7 +49,7 @@ resource "aws_sqs_queue" "dlq" {
   kms_data_key_reuse_period_seconds = 300
 
   tags = merge(
-    var.common_tags,
+    local.common_tags,
     {
       Name       = "${local.name_prefix}-export-dlq",
       "ons:name" = "${local.name_prefix}-export-dlq"
