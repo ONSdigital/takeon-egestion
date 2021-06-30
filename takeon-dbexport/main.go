@@ -10,16 +10,26 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ONSDigital/spp-logger/go/spp_logger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/google/uuid"
 )
 
 var region = os.Getenv("AWS_REGION")
 var bucket = os.Getenv("S3_BUCKET")
+var logLevel = os.Getenv("LOG_LEVEL")
+var lambdaName = os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
+var loggerConfig spp_logger.Config
+var logger *spp_logger.Logger
+var logCorrelationID = uuid.NewString()
+var mainContext spp_logger.Context
+var goContext LoggerContextStruct
+var ContextLoglevel string
 
 // SurveyPeriods arrays in JSON message
 type SurveyPeriods struct {
@@ -40,6 +50,16 @@ type OutputMessage struct {
 	Successful bool   `json:"successful"`
 }
 
+// LoggerContextStruct ...
+type LoggerContextStruct struct {
+	Log_level            string `json:"log_level"`
+	Log_correlation_id   string `json:"log_correlation_id"`
+	Log_correlation_type string `json:"log_correlation_type"`
+	Survey               string `json:"survey"`
+	Period               string `json:"period"`
+	Reference            string `json:"reference"`
+}
+
 func main() {
 
 	lambda.Start(handle)
@@ -47,9 +67,25 @@ func main() {
 }
 
 func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
-	fmt.Println("Starting the application...")
+	config := Config{}
+	env := strings.Split(lambdaName, "-")
+
+	loggerConfig = spp_logger.Config{
+		Service:     "Validation",
+		Component:   lambdaName,
+		Environment: env[4],
+		Deployment:  env[4],
+		Timezone:    "UTC",
+	}
+
+	config = sqsEvent.Payload
+
+	FullLogInitialaisation(config)
+
+	logger.Info("Application starting...")
 
 	if len(sqsEvent.Records) == 0 {
+		logger.Error("An error occured, no SQS message passed to function")
 		return errors.New("No SQS message passed to function")
 	}
 
@@ -72,6 +108,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		if err != nil {
 			return errors.New("Unable to create filename. Invalid Survey Period")
 		}
+		logger.Info("File Name: ", filename)
 		fmt.Println("File Name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
@@ -102,20 +139,23 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
-	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
+	logger.Info("Accessing GraphQL endpoint: ", gqlEndpoint)
+	// fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
 	fmt.Println("Message sending over to BL: ", message)
 	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
+		logger.Error("The HTTP request failed with error: ", err)
+		// fmt.Printf("The HTTP request failed with error %s\n", err)
 		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
 		fmt.Println("Data from BL after successful call: " + cdbExport)
 		if strings.Contains(cdbExport, "Error loading data for db Export") {
+			logger.Error("Error with business Layer")
 			return "", errors.New("Error with Business Layer")
 		}
-		fmt.Println("Accessing Graphql Endpoint done")
+		// fmt.Println("Accessing Graphql Endpoint done")
 		sendToSqs(snapshotID, filename, true)
 		return cdbExport, nil
 	}
@@ -144,7 +184,9 @@ func saveToS3(dbExport string, filename string) {
 	})
 
 	if err != nil {
-		fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
+
+		logger.Error("Unable to upload %q to %q with error: %s", filename, bucket, err)
+		// fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
 	}
 
 	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
@@ -208,4 +250,39 @@ func validateInputMessage(messageJSON InputJSON) (InputJSON, error) {
 		return messageJSON, errors.New("No Survey/period combinations given in message")
 	}
 	return messageJSON, nil
+}
+
+// This function initialises a complete logger context including survey, reference and period fields
+func FullLogInitialisation(config Config) {
+
+	logerContext := config.LoggerContext
+
+	ContextLoglevel = logerContext.Log_level
+
+	if ContextLoglevel == "" {
+		mainContext = map[string]string{"log_level": logLevel,
+			"log_correlation_id":   logCorrelationID,
+			"log_correlation_type": "Validation",
+			"survey":               config.Survey,
+			"period":               config.Period,
+			"reference":            config.Reference}
+	} else {
+		mainContext = map[string]string{"log_level": logerContext.Log_level,
+			"log_correlation_id":   logerContext.Log_correlation_id,
+			"log_correlation_type": logerContext.Log_correlation_type,
+			"survey":               logerContext.Survey,
+			"period":               logerContext.Period,
+			"reference":            logerContext.Reference,
+		}
+		goContext = LoggerContextStruct{
+			Log_level:            logerContext.Log_level,
+			Log_correlation_id:   logerContext.Log_correlation_id,
+			Log_correlation_type: logerContext.Log_correlation_type,
+			Survey:               logerContext.Survey,
+			Period:               logerContext.Period,
+			Reference:            logerContext.Reference,
+		}
+	}
+
+	logger, _ = spp_logger.NewLogger(loggerConfig, mainContext, "", os.Stdout)
 }
