@@ -144,13 +144,14 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
 	fmt.Println("Message sending over to BL: ", message)
 	if err != nil {
-		logger.Error("The HTTP request failed with error: ", err)
+		logger.Error("The HTTP request failed with error: %s\n", err)
 		// fmt.Printf("The HTTP request failed with error %s\n", err)
 		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
-		fmt.Println("Data from BL after successful call: " + cdbExport)
+		logger.Info("Data from BL after successful call: " + cdbExport)
+		// fmt.Println("Data from BL after successful call: " + cdbExport)
 		if strings.Contains(cdbExport, "Error loading data for db Export") {
 			logger.Error("Error with business Layer")
 			return "", errors.New("Error with Business Layer")
@@ -189,7 +190,8 @@ func saveToS3(dbExport string, filename string) {
 		// fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
 	}
 
-	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
+	logger.Info("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
+	// fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
 
 }
 
@@ -211,7 +213,8 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if err != nil {
-		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
+		logger.Error("Unable to find DB Export input queue. %q, %q", *queue, err)
+		// fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
 	}
 
 	location := "s3://" + bucket + "/" + filename
@@ -226,7 +229,8 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	DataToSend, err := json.Marshal(outputMessage)
 	if err != nil {
-		fmt.Printf("An error occured while marshaling DataToSend: %s", err)
+		logger.Error("An error occured while marshaling DataToSend: %s ", err)
+		// fmt.Printf("An error occured while marshaling DataToSend: %s", err)
 	}
 	fmt.Printf("DataToSend %v\n", string(DataToSend))
 
