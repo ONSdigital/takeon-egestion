@@ -78,7 +78,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		Timezone:    "UTC",
 	}
 
-	config = sqsEvent.Payload
+	// config = sqsEvent
 
 	FullLogInitialaisation(config)
 
