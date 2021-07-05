@@ -240,7 +240,8 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if error != nil {
-		fmt.Printf("Unable to send to DB Export output queue %q, %q", *queue, error)
+		logger.Error("Unable to send to DB Export output queue %q, %q", *queue, error)
+		// fmt.Printf("Unable to send to DB Export output queue %q, %q", *queue, error)
 	}
 
 }
@@ -257,7 +258,7 @@ func validateInputMessage(messageJSON InputJSON) (InputJSON, error) {
 }
 
 // This function initialises a complete logger context including survey, reference and period fields
-func FullLogInitialisation(config Config) {
+func FullLogInitialaisation(config Config) {
 
 	logerContext := config.LoggerContext
 
