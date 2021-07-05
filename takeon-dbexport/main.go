@@ -90,7 +90,8 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	}
 
 	for _, message := range sqsEvent.Records {
-		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
+		// fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
+		logger.Debug("The message " + message.MessageId + " for event source " + message.EventSource + " is " + message.Body)
 		queueMessage := message.Body
 		messageDetails := []byte(queueMessage)
 		var messageJSON InputJSON
@@ -109,7 +110,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 			return errors.New("Unable to create filename. Invalid Survey Period")
 		}
 		logger.Info("File Name: ", filename)
-		fmt.Println("File Name: ", filename)
+		// fmt.Println("File Name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
@@ -139,10 +140,11 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
-	logger.Info("Accessing GraphQL endpoint: ", gqlEndpoint)
+	logger.Debug("Accessing GraphQL endpoint: ", gqlEndpoint)
 	// fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	fmt.Println("Message sending over to BL: ", message)
+	// fmt.Println("Message sending over to BL: ", message)
+	logger.Debug("Sending message to business layer: ", message)
 	if err != nil {
 		logger.Error("The HTTP request failed with error: ", err)
 		// fmt.Printf("The HTTP request failed with error %s\n", err)
@@ -156,6 +158,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 			logger.Error("Error with business Layer")
 			return "", errors.New("Error with Business Layer")
 		}
+		logger.Debug("Accessing Graphql endpoint done")
 		// fmt.Println("Accessing Graphql Endpoint done")
 		sendToSqs(snapshotID, filename, true)
 		return cdbExport, nil
@@ -190,7 +193,7 @@ func saveToS3(dbExport string, filename string) {
 		// fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
 	}
 
-	logger.Info("Successfully uploaded"+filename+" to s3 bucket ", bucket)
+	logger.Info("Successfully uploaded "+filename+" to s3 bucket ", bucket)
 	// fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
 
 }
