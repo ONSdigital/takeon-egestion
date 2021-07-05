@@ -144,7 +144,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
 	fmt.Println("Message sending over to BL: ", message)
 	if err != nil {
-		logger.Error("The HTTP request failed with error: %s\n", err)
+		logger.Error("The HTTP request failed with error: ", err)
 		// fmt.Printf("The HTTP request failed with error %s\n", err)
 		sendToSqs(snapshotID, "null", false)
 	} else {
@@ -186,11 +186,11 @@ func saveToS3(dbExport string, filename string) {
 
 	if err != nil {
 
-		logger.Error("Unable to upload %q to %q with error: %s", filename, bucket, err)
+		logger.Error("Unable to upload "+filename+" to "+bucket+" with error: ", err)
 		// fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
 	}
 
-	logger.Info("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
+	logger.Info("Successfully uploaded"+filename+" to s3 bucket ", bucket)
 	// fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
 
 }
@@ -213,7 +213,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if err != nil {
-		logger.Error("Unable to find DB Export input queue. %q, %q", *queue, err)
+		logger.Error("Unable to find DB Export input queue. ", *queue, err)
 		// fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
 	}
 
@@ -229,7 +229,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	DataToSend, err := json.Marshal(outputMessage)
 	if err != nil {
-		logger.Error("An error occured while marshaling DataToSend: %s ", err)
+		logger.Error("An error occured while marshaling DataToSend: ", err)
 		// fmt.Printf("An error occured while marshaling DataToSend: %s", err)
 	}
 	fmt.Printf("DataToSend %v\n", string(DataToSend))
@@ -240,7 +240,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if error != nil {
-		logger.Error("Unable to send to DB Export output queue %q, %q", *queue, error)
+		logger.Error("Unable to send to DB Export output queue ", *queue, error)
 		// fmt.Printf("Unable to send to DB Export output queue %q, %q", *queue, error)
 	}
 
