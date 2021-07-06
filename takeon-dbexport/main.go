@@ -136,7 +136,7 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
 	logger.Info("Accessing GraphQL endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	logger.Info("Sending message to business layer: ", message)
+	logger.Debug("Sending message to business layer: ", message)
 	if err != nil {
 		logger.Error("The HTTP request failed with error: ", err)
 		sendToSqs(snapshotID, "null", false)
