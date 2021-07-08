@@ -1,0 +1,9 @@
+{
+    "lambdas": [
+        {
+            "deployment_name": "export",
+            "language": "go",
+            "directory": "takeon-dbexport"
+        }
+    ]
+}
