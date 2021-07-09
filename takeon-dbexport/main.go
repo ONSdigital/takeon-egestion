@@ -4,22 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/ONSDigital/spp-logger/go/spp_logger"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/google/uuid"
 )
 
 var region = os.Getenv("AWS_REGION")
 var bucket = os.Getenv("S3_BUCKET")
+var logLevel = os.Getenv("LOG_LEVEL")
+var lambdaName = os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
+var loggerConfig spp_logger.Config
+var logger *spp_logger.Logger
+var logCorrelationID = uuid.NewString()
+var mainContext spp_logger.Context
+var ContextLoglevel string
 
 // SurveyPeriods arrays in JSON message
 type SurveyPeriods struct {
@@ -47,36 +55,52 @@ func main() {
 }
 
 func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
-	fmt.Println("Starting the application...")
+	env := strings.Split(lambdaName, "-")
+
+	loggerConfig = spp_logger.Config{
+		Service:     "Snapshot",
+		Component:   lambdaName,
+		Environment: env[4],
+		Deployment:  env[4],
+		Timezone:    "UTC",
+	}
+
+	FullLogInitialaisation()
+
+	logger.Info("Application starting...")
 
 	if len(sqsEvent.Records) == 0 {
-		return errors.New("No SQS message passed to function")
+		logger.Error("An error occured, no SQS message passed to function")
+		return errors.New("no sqs message passed to function")
 	}
 
 	for _, message := range sqsEvent.Records {
-		fmt.Printf("The message %s for event source %s = %s \n", message.MessageId, message.EventSource, message.Body)
+		logger.Debug("The message " + message.MessageId + " for event source " + message.EventSource + " is " + message.Body)
 		queueMessage := message.Body
 		messageDetails := []byte(queueMessage)
 		var messageJSON InputJSON
 		parseError := json.Unmarshal(messageDetails, &messageJSON)
 		if parseError != nil {
 			sendToSqs("", "null", false)
+			logger.Error("Error with JSON from inpput queue " + parseError.Error())
 			return errors.New("Error with JSON from input queue" + parseError.Error())
 		}
 		inputMessage, validateError := validateInputMessage(messageJSON)
 		if validateError != nil {
-			return errors.New("Error with message from input queue")
+			logger.Error("Error with message from input queue")
+			return errors.New("error with message from input queue")
 		}
 		snapshotID := inputMessage.SnapshotID
 		var filename, err = getFileName(snapshotID, messageJSON.SurveyPeriods)
 		if err != nil {
-			return errors.New("Unable to create filename. Invalid Survey Period")
+			logger.Error("Unable to create filename. Invalid survey Period")
+			return errors.New("unable to create filename. Invalid Survey Period")
 		}
-		fmt.Println("File Name: ", filename)
 		data, dataError := callGraphqlEndpoint(queueMessage, snapshotID, filename)
 		if dataError != nil {
 			sendToSqs(snapshotID, "null", false)
-			return errors.New("Problem with call to Business Layer")
+			logger.Error("Problem with call to Business Layer")
+			return errors.New("problem with call to Business Layer")
 		}
 		saveToS3(data, filename)
 	}
@@ -89,7 +113,7 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 	var filename = ""
 
 	if len(surveyPeriods) == 0 {
-		return filename, errors.New("Survey Period Invalid")
+		return filename, errors.New("survey Period Invalid")
 	}
 	for _, item := range surveyPeriods {
 		combinedSurveyPeriods = combinedSurveyPeriods + join + item.Survey + "_" + item.Period
@@ -102,20 +126,21 @@ func getFileName(snapshotID string, surveyPeriods []SurveyPeriods) (string, erro
 
 func callGraphqlEndpoint(message string, snapshotID string, filename string) (string, error) {
 	var gqlEndpoint = os.Getenv("GRAPHQL_ENDPOINT")
-	fmt.Println("Going to access  Graphql Endpoint: ", gqlEndpoint)
+	logger.Info("Accessing GraphQL endpoint: ", gqlEndpoint)
 	response, err := http.Post(gqlEndpoint, "application/json; charset=UTF-8", strings.NewReader(message))
-	fmt.Println("Message sending over to BL: ", message)
+	logger.Debug("Sending message to business layer: ", message)
 	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
+		logger.Error("The HTTP request failed with error: ", err)
 		sendToSqs(snapshotID, "null", false)
 	} else {
 		data, _ := ioutil.ReadAll(response.Body)
 		cdbExport := string(data)
-		fmt.Println("Data from BL after successful call: " + cdbExport)
+		logger.Debug("Data from BL after successful call: " + cdbExport)
 		if strings.Contains(cdbExport, "Error loading data for db Export") {
-			return "", errors.New("Error with Business Layer")
+			logger.Error("Error with business Layer")
+			return "", errors.New("error with Business Layer")
 		}
-		fmt.Println("Accessing Graphql Endpoint done")
+		logger.Info("Accessing Graphql endpoint done")
 		sendToSqs(snapshotID, filename, true)
 		return cdbExport, nil
 	}
@@ -124,7 +149,6 @@ func callGraphqlEndpoint(message string, snapshotID string, filename string) (st
 
 func saveToS3(dbExport string, filename string) {
 
-	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
 		Region: aws.String(region),
 	}
@@ -132,8 +156,6 @@ func saveToS3(dbExport string, filename string) {
 	sess := session.New(config)
 
 	uploader := s3manager.NewUploader(sess)
-
-	fmt.Printf("Bucket filename: %q\n", filename)
 
 	reader := strings.NewReader(string(dbExport))
 	var err error
@@ -144,10 +166,11 @@ func saveToS3(dbExport string, filename string) {
 	})
 
 	if err != nil {
-		fmt.Printf("Unable to upload %q to %q, %v", filename, bucket, err)
+
+		logger.Error("Unable to upload "+filename+" to "+bucket+" with error: ", err)
 	}
 
-	fmt.Printf("Successfully uploaded %q to s3 bucket %q\n", filename, bucket)
+	logger.Info("Successfully uploaded "+filename+" to s3 bucket ", bucket)
 
 }
 
@@ -155,7 +178,6 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	queue := aws.String(os.Getenv("DB_EXPORT_OUTPUT_QUEUE"))
 
-	fmt.Printf("Region: %q\n", region)
 	config := &aws.Config{
 		Region: aws.String(region),
 	}
@@ -169,7 +191,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if err != nil {
-		fmt.Printf("Unable to find DB Export input queue %q, %q", *queue, err)
+		logger.Error("Unable to find DB Export input queue. ", *queue, err)
 	}
 
 	location := "s3://" + bucket + "/" + filename
@@ -184,9 +206,9 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 
 	DataToSend, err := json.Marshal(outputMessage)
 	if err != nil {
-		fmt.Printf("An error occured while marshaling DataToSend: %s", err)
+		logger.Error("An error occured while marshaling DataToSend: ", err)
 	}
-	fmt.Printf("DataToSend %v\n", string(DataToSend))
+	logger.Info("DataToSend: ", string(DataToSend))
 
 	_, error := svc.SendMessage(&sqs.SendMessageInput{
 		MessageBody: aws.String(string(DataToSend)),
@@ -194,7 +216,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	})
 
 	if error != nil {
-		fmt.Printf("Unable to send to DB Export output queue %q, %q", *queue, error)
+		logger.Error("Unable to send to DB Export output queue ", *queue, error)
 	}
 
 }
@@ -202,10 +224,21 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 func validateInputMessage(messageJSON InputJSON) (InputJSON, error) {
 	if messageJSON.SnapshotID == "" {
 		sendToSqs("", "null", false)
-		return messageJSON, errors.New("No SnapshotID given in message")
+		return messageJSON, errors.New("no SnapshotID given in message")
 	} else if len(messageJSON.SurveyPeriods) == 0 {
 		sendToSqs(messageJSON.SnapshotID, "null", false)
-		return messageJSON, errors.New("No Survey/period combinations given in message")
+		return messageJSON, errors.New("no Survey/period combinations given in message")
 	}
 	return messageJSON, nil
+}
+
+// This function initialises a complete logger context including survey, reference and period fields
+func FullLogInitialaisation() {
+
+	mainContext = map[string]string{
+		"log_level":            logLevel,
+		"log_correlation_id":   logCorrelationID,
+		"log_correlation_type": "Snapshot"}
+
+	logger, _ = spp_logger.NewLogger(loggerConfig, mainContext, "", os.Stdout)
 }
