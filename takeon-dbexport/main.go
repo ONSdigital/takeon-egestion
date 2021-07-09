@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -49,13 +48,6 @@ type OutputMessage struct {
 	Successful bool   `json:"successful"`
 }
 
-// LoggerContextStruct ...
-type LoggerContextStruct struct {
-	Log_level            string `json:"log_level"`
-	Log_correlation_id   string `json:"log_correlation_id"`
-	Log_correlation_type string `json:"log_correlation_type"`
-}
-
 func main() {
 
 	lambda.Start(handle)
@@ -66,7 +58,7 @@ func handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	env := strings.Split(lambdaName, "-")
 
 	loggerConfig = spp_logger.Config{
-		Service:     "Validation",
+		Service:     "Snapshot",
 		Component:   lambdaName,
 		Environment: env[4],
 		Deployment:  env[4],
@@ -216,7 +208,7 @@ func sendToSqs(snapshotid string, filename string, successful bool) {
 	if err != nil {
 		logger.Error("An error occured while marshaling DataToSend: ", err)
 	}
-	fmt.Printf("DataToSend %v\n", string(DataToSend))
+	logger.Info("DataToSend: ", string(DataToSend))
 
 	_, error := svc.SendMessage(&sqs.SendMessageInput{
 		MessageBody: aws.String(string(DataToSend)),
